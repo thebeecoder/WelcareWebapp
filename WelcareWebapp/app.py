@@ -29,9 +29,8 @@ def role_select():
 def login():
     message = None
     user = None
-    role = None
 
-    type_param = request.args.get('type')  # Get the type parameter from the URL
+    type_param = request.args.get('type')
 
     if request.method == 'POST':
         identifier = request.form['identifier']
@@ -39,32 +38,28 @@ def login():
 
         with db_connection.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM users WHERE email=%s AND password=%s AND role=%s",
-                (identifier, password, type_param)  # Use type_param as role
+                "SELECT * FROM users WHERE email=%s AND role=%s AND password=%s",
+                (identifier, type_param, password)
             )
+            user_data = cursor.fetchone()
 
-            users = cursor.fetchall()
+            if user_data:
+                session['user_id'] = user_data[0]
+                user = {
+                    'first_name': user_data[2],
+                    'last_name': user_data[3],
+                    'profile_picture': user_data[6]
+                }
+                role = user_data[5]
 
-            if users:
-                user_data = users[0]
-                role = type_param  # Assign the value of type_param to role
-                for user_data in users:
-                    if user_data[4] == password and user_data[5] == role:
-                        session['user_id'] = user_data[0]
-                        user = {
-                            'first_name': user_data[3],
-                            'last_name': user_data[4],
-                            'profile_picture': user_data[7]
-                        }
-                        if role == 'Admin':
-                            return render_template('admin_dashboard.html', user=user)
-                        elif role == 'Staff':
-                            return render_template('staff_dashboard.html', user=user)
-                        elif role == 'User':
-                            return redirect(url_for('user_dashboard'))
-                message = "Wrong Password or Role."
+                if role == 'Admin':
+                    return render_template('admin_dashboard.html', user=user)
+                elif role == 'Staff':
+                    return render_template('staff_dashboard.html', user=user)
+                elif role == 'User':
+                    return render_template('user_dashboard.html', user=user)
             else:
-                message = "Wrong Password or Role."
+                message = "Wrong Email, Password, or Role."
 
     return render_template('login.html', message=message, user=user, type=type_param)
 

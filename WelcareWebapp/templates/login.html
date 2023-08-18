@@ -19,12 +19,12 @@
                     <img src="../static/walcarelogo.png" class="brand-logo" draggable="false">
                 </div>
                 <h2>Verify your identity</h2>
-                <form method="POST" action="/">
+                <form method="POST">
                     <div class="form-row">
                         <div class="col-12 mb-4">
                             <div class="input-container">
                                 <input type="text" class="form-control" id="identifier" name="identifier" required>
-                                <label for="identifier">Enter username or email</label>
+                                <label for="identifier">Enter your email</label>
                             </div>
                         </div>
                     </div>
@@ -54,7 +54,7 @@
                 </form>
                 <div class="row">
                     <div class="col-12 mb-4 signup-line">
-                        {% if type not in ['Admin', 'Staff'] %}
+                        {% if type == 'User' %}
                         Don't have an account? <a href="/signup">Sign Up</a>
                         {% endif %}
                     </div>
