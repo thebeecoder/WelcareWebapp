@@ -69,7 +69,6 @@ def signup():
     message = None
 
     if request.method == 'POST':
-        username = request.form['username']
         email = request.form['email']
         first_name = request.form['first_name']
         last_name = request.form['last_name']
@@ -78,16 +77,16 @@ def signup():
 
         # Using context manager for cursor
         with db_connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM users WHERE username=%s OR email=%s", (username, email))
+            cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
             existing_users = cursor.fetchall()
 
-            if any(user[1] == username and user[2] == email for user in existing_users):
+            if any(user[1] == email for user in existing_users):
                 message = "User exists."
             else:
                 # Insert new user into the database
                 cursor.execute(
-                    "INSERT INTO users (username, email, first_name, last_name, password, role) VALUES (%s, %s, %s, %s, %s, %s)",
-                    (username, email, first_name, last_name, password, role))
+                    "INSERT INTO users (email, first_name, last_name, password, role) VALUES (%s, %s, %s, %s, %s)",
+                    (email, first_name, last_name, password, role))
                 db_connection.commit()
                 message = "Successfully registered!"
 
