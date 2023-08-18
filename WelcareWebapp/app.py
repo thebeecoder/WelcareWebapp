@@ -13,10 +13,10 @@ app.secret_key = 'welcare'
 
 # Establish the database connection
 db_connection = mysql.connector.connect(
-    host='127.0.0.1',
-    user='root',
-    password='root',
-    database='welcare_app'
+    host='welcare.org.uk',
+    user='welcare',
+    password='applicationPatient!!',
+    database='welcarewebapp'
 )
 
 
@@ -73,7 +73,7 @@ def signup():
         first_name = request.form['first_name']
         last_name = request.form['last_name']
         password = request.form['password']
-        role = request.form['role']
+        role = "User"
 
         # Using context manager for cursor
         with db_connection.cursor() as cursor:
@@ -81,7 +81,7 @@ def signup():
             existing_users = cursor.fetchall()
 
             if any(user[1] == email for user in existing_users):
-                message = "User exists."
+                message = "User already exists."
             else:
                 # Insert new user into the database
                 cursor.execute(
