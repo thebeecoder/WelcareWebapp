@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+
+        }
+
+        .sidebar {
+            height: 100%;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0px;
+            background-color: #111;
+            padding-top: 20px;
+            transition: 0.5s; /* Add transition effect */
+        }
+
+
+        .sidebar.active {
+            left: 0; /* Show sidebar when active class is added */
+        }
+
+
+
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 20px;
+            color: white;
+            display: block;
+            transition: 0.3s;
+        }
+
+
+        .sidebar a:hover {
+            background-color: #575757;
+        }
+
+        /*
+        .toggle-btn {
+            position: fixed;
+            top: 15px;
+            left: 10px;
+            cursor: pointer;
+            z-index: 999;
+        }
+        */
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            width: 80px;
+            height: auto;
+        }
+
+        .content {
+            margin-left: 250px;
+            margin-top: 15%;
+            margin-bottom: 17%;
+            text-align: center; /* Center the content */
+        }
+
+        .welcome-text {
+            font-size: 100px;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold; /* Make the text bold */
+            color: white;
+            animation: fadeIn 2s; /* Apply a fade-in animation */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .logout-button {
+            position: absolute;
+            bottom: 60px; /* Adjust the distance from the bottom as needed */
+            left: 30px; /* Adjust the horizontal position as needed */
+            width: 180px; /* Set the width of the button */
+            padding: 0px;
+            background-color: #575757;
+            text-align: center;
+            border-radius: 5px;
+        }
+
+        .logout-button a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 15px;
+            color: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .profile-link {
+            margin-left: 20px;
+            color: #ccc;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .settings-icon {
+            width: 33px; /* Adjust the width of the icon */
+            height: 33px; /* Adjust the height of the icon */
+            margin-right: 5px; /* Add a little space between icon and text */
+            vertical-align: middle; /* Align the icon vertically with text */
+        }
+
+    </style>
+    <script>
+        /* function toggleSidebar() {
+            var sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+        */
+    </script>
+</head>
+<body>
+    <div class="toggle-btn" onclick="toggleSidebar()">
+        &#9776; <!-- 3 lines symbol -->
+    </div>
+
+    <div class="top-bar">
+        <div class="user-info">
+            <img class="user-image" src="{{ url_for('static', filename=user.profile_picture) }}" alt="User Profile">
+            <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
+        </div>
+        <a class="profile-link" href="{{ url_for('profile') }}">
+            <img class="settings-icon" src="{{ url_for('static', filename='settings.svg') }}" alt="Settings Icon"</a>
+    </div>
+
+    <div class="sidebar">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='walcarelogo.png') }}" alt="Logo" style="width: 150px; height: auto;">
+        </div>
+        <a href="/user_dashboard">Dashboard</a>
+        <a href="/diary">Diary</a>
+        <a href="#">Notes</a>
+        <a href="#">Media</a>
+        <a href="#">Attendance</a>
+        <div class="logout-button">
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="welcome-text">
+            Welcome to Welcare
+        </div>
+    </div>
+
+    <script>
+        const body = document.body;
+        let gradientAngle = 0;
+
+        function updateGradient() {
+            gradientAngle += 1;
+            body.style.background = `linear-gradient(${gradientAngle}deg, #e15fa4, #a1a5ae)`;
+            requestAnimationFrame(updateGradient);
+        }
+
+        updateGradient();
+    </script>
+</body>
+</html>
