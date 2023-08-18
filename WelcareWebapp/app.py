@@ -21,29 +21,37 @@ db_connection = mysql.connector.connect(
 
 
 @app.route('/', methods=['GET', 'POST'])
+def role_select():
+    return render_template('role_select.html')
+
+
+@app.route('/login/', methods=['GET', 'POST'])
 def login():
     message = None
-    user = None  # Add this line
+    user = None
+    role = None
+
+    type_param = request.args.get('type')  # Get the type parameter from the URL
 
     if request.method == 'POST':
-        identifier = request.form['identifier']  # username or email
+        identifier = request.form['identifier']
         password = request.form['password']
-        role = request.form['role']
 
-        # Using context manager for cursor
         with db_connection.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM users WHERE (username=%s OR email=%s) AND password=%s AND role=%s",
-                (identifier, identifier, password, role)
+                "SELECT * FROM users WHERE email=%s AND password=%s AND role=%s",
+                (identifier, password, type_param)  # Use type_param as role
             )
 
-            users = cursor.fetchall()  # Fetch all rows matching the query
+            users = cursor.fetchall()
 
             if users:
-                for user_data in users:  # Renamed variable to avoid confusion
-                    if user_data[5] == password and user_data[6] == role:
-                        session['user_id'] = user_data[0]  # Store the user's ID in the session
-                        user = {  # Create a dictionary for user data
+                user_data = users[0]
+                role = type_param  # Assign the value of type_param to role
+                for user_data in users:
+                    if user_data[4] == password and user_data[5] == role:
+                        session['user_id'] = user_data[0]
+                        user = {
                             'first_name': user_data[3],
                             'last_name': user_data[4],
                             'profile_picture': user_data[7]
@@ -53,12 +61,12 @@ def login():
                         elif role == 'Staff':
                             return render_template('staff_dashboard.html', user=user)
                         elif role == 'User':
-                            return redirect(url_for('user_dashboard'))  # Redirect to user dashboard
+                            return redirect(url_for('user_dashboard'))
                 message = "Wrong Password or Role."
             else:
                 message = "Wrong Password or Role."
 
-    return render_template('login.html', message=message, user=user)  # Pass 'user' to template
+    return render_template('login.html', message=message, user=user, type=type_param)
 
 
 @app.route('/signup', methods=['GET', 'POST'])

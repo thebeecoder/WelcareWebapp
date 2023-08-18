@@ -54,7 +54,9 @@
                 </form>
                 <div class="row">
                     <div class="col-12 mb-4 signup-line">
+                        {% if type not in ['Admin', 'Staff'] %}
                         Don't have an account? <a href="/signup">Sign Up</a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="row">
