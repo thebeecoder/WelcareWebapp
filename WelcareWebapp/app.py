@@ -2,6 +2,8 @@ import os
 import traceback
 from datetime import datetime, timedelta
 
+from flask_sqlalchemy import SQLAlchemy
+from flask_session import Session
 import mysql.connector
 from mysql.connector import Error
 from flask import Flask, render_template, request, redirect, url_for, session
@@ -12,21 +14,22 @@ app = Flask(__name__)
 
 app.secret_key = 'welcare'
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://welcare:welcarewebapp@welcare.org.uk/welcarewebapp'
+db = SQLAlchemy(app)
+
 # Establish the database connection
-try:
-    db_connection = mysql.connector.connect(
-        host='welcare.org.uk',
-        user='welcare',
-        password='welcarewebapp',
-        database='welcarewebapp'
-    )
-    if db_connection.is_connected():
-        print("Connected to MySQL database")
-except Error as e:
-    print("Error:", e)
-finally:
-    # Close the connection when done
-    db_connection.close()
+db_connection = mysql.connector.connect(
+    host='welcare.org.uk',
+    user='welcare',
+    password='welcarewebapp',
+    database='welcarewebapp'
+)
+
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+app.config['SESSION_SQLALCHEMY'] = db
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+
+Session(app)
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -45,30 +48,33 @@ def login():
         identifier = request.form['identifier']
         password = request.form['password']
 
-        with db_connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT * FROM users WHERE email=%s AND role=%s AND password=%s",
-                (identifier, type_param, password)
-            )
-            user_data = cursor.fetchone()
+        try:
+            with db_connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM users WHERE email=%s AND role=%s AND password=%s",
+                    (identifier, type_param, password)
+                )
+                user_data = cursor.fetchone()
 
-            if user_data:
-                session['user_id'] = user_data[0]
-                user = {
-                    'first_name': user_data[2],
-                    'last_name': user_data[3],
-                    'profile_picture': user_data[6]
-                }
-                role = user_data[5]
+                if user_data:
+                    session['user_id'] = user_data[0]
+                    user = {
+                        'first_name': user_data[2],
+                        'last_name': user_data[3],
+                        'profile_picture': user_data[6]
+                    }
+                    role = user_data[5]
 
-                if role == 'Admin':
-                    return render_template('admin_dashboard.html', user=user)
-                elif role == 'Staff':
-                    return render_template('staff_dashboard.html', user=user)
-                elif role == 'User':
-                    return render_template('user_dashboard.html', user=user)
-            else:
-                message = "Wrong Email, Password, or Role."
+                    if role == 'Admin':
+                        return render_template('admin_dashboard.html', user=user)
+                    elif role == 'Staff':
+                        return render_template('staff_dashboard.html', user=user)
+                    elif role == 'User':
+                        return render_template('user_dashboard.html', user=user)
+                else:
+                    message = "Wrong Email, Password, or Role."
+        except Exception as e:
+            print("An error occurred:", e)
 
     return render_template('login.html', message=message, user=user, type=type_param)
 
@@ -118,7 +124,7 @@ def get_user_id_from_session():
 
 @app.route('/user_dashboard')
 def user_dashboard():
-    user_id = get_user_id_from_session()
+    user_id = session.get('user_id')
 
     if user_id:
         with db_connection.cursor() as cursor:
@@ -297,4 +303,7 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=80)
+    app.debug = True
+    app.run()
+
+
