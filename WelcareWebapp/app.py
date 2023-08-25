@@ -3,6 +3,7 @@ import traceback
 from datetime import datetime, timedelta
 
 import mysql.connector
+from mysql.connector import Error
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
@@ -12,12 +13,20 @@ app = Flask(__name__)
 app.secret_key = 'welcare'
 
 # Establish the database connection
-db_connection = mysql.connector.connect(
-    host='welcare.org.uk',
-    user='welcare',
-    password='applicationPatient!!',
-    database='welcarewebapp'
-)
+try:
+    db_connection = mysql.connector.connect(
+        host='welcare.org.uk',
+        user='welcare',
+        password='welcarewebapp',
+        database='welcarewebapp'
+    )
+    if db_connection.is_connected():
+        print("Connected to MySQL database")
+except Error as e:
+    print("Error:", e)
+finally:
+    # Close the connection when done
+    db_connection.close()
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -288,4 +297,4 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host='0.0.0.0', port=80)
