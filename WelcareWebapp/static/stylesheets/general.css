@@ -1,3 +1,12 @@
+@font-face {
+    font-family: Raleway;
+    src: url(../font/Quicksand-Regular.ttf);
+}
+
+body{
+    font-family: Raleway;
+}
+
 .row, p {
     margin: 0px;
 }
@@ -35,6 +44,125 @@ a:hover {
     background-color: rgba(0, 128, 0, 0.1);
     padding: 15px;
     border-radius: 10px;
+}
+
+.container{
+    min-width: 100%;
+    padding: 0px;
+    margin: 0px;
+}
+
+.user-image {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 1px solid #fff;
+    margin: 0 auto;
+    display: block;
+    margin-bottom: 20px;
+}
+
+.user-name {
+    color: white;
+    font-weight: bold;
+}
+
+.profile-status{
+    background-color: white;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 14px;    
+}
+
+.profile-link {
+    margin-left: 20px;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 250px;
+    position: fixed;
+    background-color: #c22378;
+    height: 100vh;
+    padding-top: 10px;
+    transition: 0.5s;
+    transition: width 0.3s;
+    overflow: hidden;
+    z-index: 9999;
+}
+
+.sidebar-icon{
+    display: inline-block;
+    width: 30px;
+}
+
+.sidebar-icon i{
+    font-size: 18px;
+}
+
+.modules-container{
+    margin-top: 20px;
+    padding: 20px;
+    font-size: 14px;
+}
+
+.sidebar .modules-container a {
+    display: block;
+    font-weight: 100;
+    padding: 15px;
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    transition: background-color 0.3s;
+}
+
+.sidebar .modules-container a:hover {
+    color: #c22378;
+    background-color: white;
+}
+
+.sidebar .modules-container .acivee{
+    color: #c22378;
+    background-color: white;
+}
+
+.logout-button {
+    position: absolute;
+    bottom: 30px;
+    left: 40px;
+    text-align: center;
+    border-radius: 5px;
+}
+
+.logout-button a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.logo {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.sidebar .logo-img {
+    width: 150px;
+    height: auto;
+    margin: 20px auto;
+}
+
+.right-body{
+    margin-left: 250px;
+    padding: 20px;
+}
+
+.card{
+    background-color: #faeff5d2;
+    border: 0px;
+    margin-bottom: 20px;
 }
 
 /* label animation work */

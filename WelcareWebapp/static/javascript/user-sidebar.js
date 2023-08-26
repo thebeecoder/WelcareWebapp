@@ -1,0 +1,55 @@
+$('.sidebar').html(
+`
+    <div class="logo">
+        <img src="../static/walcarelogo.png" alt="Logo" class="logo-img">
+    </div>
+
+    <a href="{{ url_for('profile') }}">
+        <img class="user-image" src="{{ url_for('static', filename=user.profile_picture) }}" alt="User Profile">
+    </a>
+    <div class="user-name text-center">
+        {{ user.first_name }} {{ user.last_name }}
+    </div>
+    <div class="mt-3 text-center">
+        <span class="profile-status">Active</span>
+    </div>
+
+    <div class="modules-container">
+        <div class="dashboard">
+            <a href="/user_dashboard">
+                <div class="sidebar-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                Dashboard
+            </a>
+        </div>
+        <a href="/diary">
+            <div class="sidebar-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            Diary
+        </a>
+        <a href="#">
+            <div class="sidebar-icon">
+                <i class="fas fa-sticky-note"></i>
+            </div>
+            Notes
+        </a>
+        <a href="#">
+            <div class="sidebar-icon">
+                <i class="fas fa-photo-video"></i>
+            </div>
+            Media
+        </a>
+        <a href="#">
+            <div class="sidebar-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            Attendance
+        </a>
+    </div>
+    <div class="logout-button">
+        <a href="/logout"><i class="fas fa-sign-out-alt"></i>&nbsp;&nbsp;Logout</a>
+    </div>
+`
+)
