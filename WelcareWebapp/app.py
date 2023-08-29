@@ -1,7 +1,7 @@
 import os
 import traceback
 from datetime import datetime, timedelta
-import mysql.connector
+import mysql.connector.pooling
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
@@ -12,12 +12,24 @@ app = Flask(__name__)
 app.secret_key = 'welcare'
 
 # Establish the database connection
-db_connection = mysql.connector.connect(
-    host='welcare.org.uk',
-    user='welcare',
-    password='welcarewebapp',
-    database='welcarewebapp'
-)
+# db_connection = mysql.connector.connect(
+#     host='welcare.org.uk',
+#     user='welcare',
+#     password='welcarewebapp',
+#     database='welcarewebapp'
+# )
+
+db_config = {
+    "host": "welcare.org.uk",
+    "user": "welcare",
+    "password": "welcarewebapp",
+    "database": "welcarewebapp",
+    "pool_name": "my_pool",
+    "pool_size": 5,
+    "pool_reset_session": False
+}
+connection_pool  = mysql.connector.pooling.MySQLConnectionPool(**db_config)
+db_connection = connection_pool.get_connection()
 
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
