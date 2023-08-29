@@ -1,21 +1,15 @@
 import os
 import traceback
 from datetime import datetime, timedelta
-
-from flask_sqlalchemy import SQLAlchemy
-from flask_session import Session
 import mysql.connector
-from mysql.connector import Error
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
+from flask_session import Session
 
 app = Flask(__name__)
 
 app.secret_key = 'welcare'
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://welcare:welcarewebapp@welcare.org.uk/welcarewebapp'
-db = SQLAlchemy(app)
 
 # Establish the database connection
 db_connection = mysql.connector.connect(
@@ -25,11 +19,13 @@ db_connection = mysql.connector.connect(
     database='welcarewebapp'
 )
 
-app.config['SESSION_TYPE'] = 'sqlalchemy'
-app.config['SESSION_SQLALCHEMY'] = db
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
-
+app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
+
+
+@app.before_request
+def cleanup():
+    session.modified = True
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -57,12 +53,12 @@ def login():
                 user_data = cursor.fetchone()
 
                 if user_data:
-                    session['user_id'] = user_data[0]
                     user = {
                         'first_name': user_data[2],
                         'last_name': user_data[3],
                         'profile_picture': user_data[6]
                     }
+                    session['user_id'] = user_data[0]
                     role = user_data[5]
 
                     if role == 'Admin':
@@ -77,7 +73,6 @@ def login():
             print("An error occurred:", e)
 
     return render_template('login.html', message=message, user=user, type=type_param)
-
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -118,36 +113,31 @@ def staff_dashboard():
     return render_template('staff_dashboard.html')
 
 
-def get_user_id_from_session():
-    return session.get('user_id')
-
-
 @app.route('/user_dashboard')
 def user_dashboard():
-        user_id = session.get('user_id')
-        print("Server-side session data:", session)
+    user_id = session.get('user_id')
 
-        if user_id:
-            with db_connection.cursor() as cursor:
-                cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
-                user_info = cursor.fetchone()
+    if user_id:
+        with db_connection.cursor() as cursor:
+            cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
+            user_info = cursor.fetchone()
 
-            if user_info:
-                user = {
-                    'first_name': user_info[0],
-                    'last_name': user_info[1],
-                    'profile_picture': user_info[2]
-                }
-            else:
-                user = {
-                    'first_name': 'User',
-                    'last_name': '',
-                    'profile_picture': 'default_profile_picture.png'
-                }
-
-            return render_template('user_dashboard.html', user=user)
+        if user_info:
+            user = {
+                'first_name': user_info[0],
+                'last_name': user_info[1],
+                'profile_picture': user_info[2]
+            }
         else:
-            return redirect(url_for('login'))  # Redirect to login if user ID not found in session
+            user = {
+                'first_name': 'User',
+                'last_name': '',
+                'profile_picture': 'default_profile_picture.png'
+            }
+
+        return render_template('user_dashboard.html', user=user)
+    else:
+        return redirect(url_for('login'))  # Redirect to login if user ID not found in session
 
 
 @app.route('/profile', methods=['GET', 'POST'])
