@@ -124,29 +124,30 @@ def get_user_id_from_session():
 
 @app.route('/user_dashboard')
 def user_dashboard():
-    user_id = session.get('user_id')
+        user_id = session.get('user_id')
+        print("Server-side session data:", session)
 
-    if user_id:
-        with db_connection.cursor() as cursor:
-            cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
-            user_info = cursor.fetchone()
+        if user_id:
+            with db_connection.cursor() as cursor:
+                cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
+                user_info = cursor.fetchone()
 
-        if user_info:
-            user = {
-                'first_name': user_info[0],
-                'last_name': user_info[1],
-                'profile_picture': user_info[2]
-            }
+            if user_info:
+                user = {
+                    'first_name': user_info[0],
+                    'last_name': user_info[1],
+                    'profile_picture': user_info[2]
+                }
+            else:
+                user = {
+                    'first_name': 'User',
+                    'last_name': '',
+                    'profile_picture': 'default_profile_picture.png'
+                }
+
+            return render_template('user_dashboard.html', user=user)
         else:
-            user = {
-                'first_name': 'User',
-                'last_name': '',
-                'profile_picture': 'default_profile_picture.png'
-            }
-
-        return render_template('user_dashboard.html', user=user)
-    else:
-        return redirect(url_for('login'))  # Redirect to login if user ID not found in session
+            return redirect(url_for('login'))  # Redirect to login if user ID not found in session
 
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -254,7 +255,7 @@ def update_profile():
 
 @app.route('/diary', methods=['GET'])
 def diary():
-    user_id = get_user_id_from_session()
+    user_id = session.get('user_id')
 
     if user_id:
         # Assuming you have already defined the db_connection variable earlier in your code
@@ -305,5 +306,3 @@ def logout():
 if __name__ == "__main__":
     app.debug = True
     app.run()
-
-

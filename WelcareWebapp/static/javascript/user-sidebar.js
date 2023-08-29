@@ -5,10 +5,10 @@ $('.sidebar').html(
     </div>
 
     <a href="{{ url_for('profile') }}">
-        <img class="user-image" src="{{ url_for('static', filename=user.profile_picture) }}" alt="User Profile">
+        <img class="user-image" src="../static/${userData.profile_picture}" alt="User Profile">
     </a>
     <div class="user-name text-center">
-        {{ user.first_name }} {{ user.last_name }}
+        ${userData.first_name} ${userData.last_name}
     </div>
     <div class="mt-3 text-center">
         <span class="profile-status">Active</span>
@@ -29,19 +29,19 @@ $('.sidebar').html(
             </div>
             Diary
         </a>
-        <a href="#">
+        <a href="/notes">
             <div class="sidebar-icon">
                 <i class="fas fa-sticky-note"></i>
             </div>
             Notes
         </a>
-        <a href="#">
+        <a href="/media">
             <div class="sidebar-icon">
                 <i class="fas fa-photo-video"></i>
             </div>
             Media
         </a>
-        <a href="#">
+        <a href="/attendance">
             <div class="sidebar-icon">
                 <i class="fas fa-calendar-check"></i>
             </div>
