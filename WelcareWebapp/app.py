@@ -1,17 +1,11 @@
 import logging
 import os
-import traceback
-from datetime import datetime, timedelta
 import mysql.connector
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 import mysql.connector.pooling
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 from flask_session import Session
-from flask import render_template, redirect, url_for, session
-import traceback
-import datetime
 
 app = Flask(__name__)
 
@@ -25,6 +19,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Establish the database connection
+# db_connection = mysql.connector.connect(
+#     host='welcare.org.uk',
+#     user='welcare',
+#     password='welcarewebapp',
+#     database='welcarewebapp'
+# )
 
 db_config = {
     "host": "welcare.org.uk",
@@ -287,6 +288,10 @@ def get_diary_records():
         with db_connection.cursor() as cursor:
             cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
             user_info = cursor.fetchone()
+            cursor.execute(
+                "SELECT attended_datetime FROM diary_records WHERE user_id = %s AND attended_datetime >= %s AND attended_datetime <= %s",
+                (user_id, start_date, end_date))
+            diary_records = cursor.fetchall()
 
         if user_info:
             user = {
