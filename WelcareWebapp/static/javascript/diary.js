@@ -26,6 +26,7 @@ function updateDiaryRecords() {
                     counter ++;
                 });
                 $('.record-table').removeClass('d-none')
+                $('#diary-records-body').html('')
             }
             else{
                 $('.record-table').addClass('d-none')
