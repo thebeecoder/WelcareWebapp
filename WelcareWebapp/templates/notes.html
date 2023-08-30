@@ -61,14 +61,15 @@
                     </div>
                 </div>
                 <div class="col-md-6">
+                    {% for note in user_notes %}
                     <div class="card">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col">
-                                    <h5 class="mt-2">What is CSS?</h5>
+                                    <h5 class="mt-2">{{ note[3] }}</h5>
                                 </div>
                                 <div class="col-auto">
-                                    <small>August 15, 1947</small>
+                                    <small>{{ note[2].strftime('%B %d, %Y') }}</small>
                                 </div>
                             </div>
                             <hr>
