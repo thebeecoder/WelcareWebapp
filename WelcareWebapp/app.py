@@ -280,6 +280,8 @@ def get_records():
         return jsonify(diary_records=diary_records)
     else:
         return jsonify(message="User not logged in"), 401
+
+
 @app.route('/diary', methods=['GET'])
 def get_diary_records():
     user_id = session.get('user_id')
@@ -288,10 +290,6 @@ def get_diary_records():
         with db_connection.cursor() as cursor:
             cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
             user_info = cursor.fetchone()
-            cursor.execute(
-                "SELECT attended_datetime FROM diary_records WHERE user_id = %s AND attended_datetime >= %s AND attended_datetime <= %s",
-                (user_id, start_date, end_date))
-            diary_records = cursor.fetchall()
 
         if user_info:
             user = {
