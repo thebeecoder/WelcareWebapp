@@ -4,8 +4,9 @@ $('.sidebar').html(
         <img src="../static/walcarelogo.png" alt="Logo" class="logo-img">
     </div>
 
-    <a href="{{ url_for('profile') }}">
-        <img class="user-image" src="../static/${userData.profile_picture}" alt="User Profile">
+    <a href="javascript:void(0);">
+        <img class="user-image" src="../static/images/blank-profile.jpg" draggable="false" alt="User Profile">
+        <!--<img class="user-image" src="../static/${userData.profile_picture}" alt="User Profile">-->
     </a>
     <div class="user-name text-center">
         ${userData.first_name} ${userData.last_name}
