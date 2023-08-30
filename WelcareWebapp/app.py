@@ -34,7 +34,7 @@ db_config = {
     "database": "welcarewebapp",
     "pool_name": "my_pool",
     "pool_size": 5,
-    "pool_reset_session": False
+    "pool_reset_session": False,
 }
 connection_pool = mysql.connector.pooling.MySQLConnectionPool(**db_config)
 db_connection = connection_pool.get_connection()

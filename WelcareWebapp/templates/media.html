@@ -32,12 +32,12 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row" id="preview-container"></div>
-                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('view_media') }}">
-                    <div class="custom-file text-center">
-                        <input type="file" class="custom-file-input d-none" id="file-input" multiple accept="image/*, video/*">
-                        <label class="custom-file-label btn btn-light" for="file-input">Upload Images or Videos</label>
-                    </div>
-                        <button type="submit" class="btn btn-primary mt-3">Upload</button>
+                    <form method="POST" class="text-center" enctype="multipart/form-data" action="{{ url_for('view_media') }}">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input d-none" id="file-input" multiple accept="image/*, video/*">
+                            <label class="custom-file-label btn btn-light" for="file-input"><i class="fas fa-photo-video"></i> &nbsp; Select media files</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-upload"></i> &nbsp; Upload files</button>
                     </form>
                 </div>
             </div>
