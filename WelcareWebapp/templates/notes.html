@@ -30,8 +30,8 @@
             </div>
             
             <div class="row">
+                {% for note in user_notes %}
                 <div class="col-md-6">
-                    {% for note in user_notes %}
                     <div class="card">
                         <div class="card-body">
                             <div class="row">
@@ -39,51 +39,26 @@
                                     <h5 class="mt-2">{{ note[1] }}</h5>
                                 </div>
                                 <div class="col-auto">
-                                    <small>{{ note[0].strftime('%B %d, %Y') }}</small>
+                                    <div class="mt-1">
+                                        <small>{{ note[0].strftime('%B %d, %Y') }}</small>
+                                    </div>
                                 </div>
                             </div>
                             <hr>
                             <div class="row">
                                 <div class="col">
-                                    {{ note[1] }}
+                                    {{ note[2][:100] ~ '...' }}
                                     <br>
                                     <div>
-                                        <span id="uniqueTextID" class="text"></span>
+                                        <span id="uniqueTextID-{{ note[3] }}" class="text">{{note[2][100:]}}</span>
                                     </div>
-                                    <button class="btn btn-light mt-3" id="uniqueID" onclick="toggle('uniqueID', 'uniqueTextID')">Read more</button>
+                                    <button class="btn btn-light mt-3" id="uniqueID-{{ note[3] }}" onclick="toggle('uniqueID-{{ note[3] }}', 'uniqueTextID-{{ note[3] }}')">Read more</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-                <div class="col-md-6">
-                    {% for note in user_notes %}
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col">
-                                    <h5 class="mt-2">{{ note[1] }}</h5>
-                                </div>
-                                <div class="col-auto">
-                                    <small>{{ note[0].strftime('%B %d, %Y') }}</small>
-                                </div>
-                            </div>
-                            <hr>
-                            <div class="row">
-                                <div class="col">
-                                    {{ note[1] }}
-                                    <br>
-                                    <div>
-                                        <span id="uniqueTextID1" class="text"></span>
-                                    </div>
-                                    <button class="btn btn-light mt-3" id="uniqueID1" onclick="toggle('uniqueID1', 'uniqueTextID1')">Read more</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div> 
+                {% endfor %}
             </div>
         </div>
     </div>

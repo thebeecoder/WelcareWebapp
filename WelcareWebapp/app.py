@@ -333,7 +333,7 @@ def view_notes():
                 }
 
             # Fetch notes for the user
-            cursor.execute("SELECT note_date, content FROM notes WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE user_id = %s", (user_id,))
             user_notes = cursor.fetchall()
 
             return render_template('notes.html', user=user, user_notes=user_notes)
