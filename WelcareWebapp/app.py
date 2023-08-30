@@ -10,6 +10,14 @@ from flask_session import Session
 app = Flask(__name__)
 
 app.secret_key = 'welcare'
+UPLOAD_FOLDER = os.path.join('static', 'media')  # Set the path to static/media
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mkv'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Establish the database connection
 # db_connection = mysql.connector.connect(
@@ -28,7 +36,7 @@ db_config = {
     "pool_size": 5,
     "pool_reset_session": False
 }
-connection_pool  = mysql.connector.pooling.MySQLConnectionPool(**db_config)
+connection_pool = mysql.connector.pooling.MySQLConnectionPool(**db_config)
 db_connection = connection_pool.get_connection()
 
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -85,6 +93,7 @@ def login():
             print("An error occurred:", e)
 
     return render_template('login.html', message=message, user=user, type=type_param)
+
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -254,13 +263,26 @@ def update_profile():
 
     return redirect(url_for('profile'))
 
-
-@app.route('/diary', methods=['GET'])
-def get_diary_records():
+@app.route('/getrecords', methods=['GET'])
+def get_records():
     user_id = session.get('user_id')
 
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+
+    if user_id:
+        with db_connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT attended_datetime FROM diary_records WHERE user_id = %s AND attended_datetime >= %s AND attended_datetime <= %s",
+                (user_id, start_date, end_date))
+            diary_records = cursor.fetchall()
+
+        return jsonify(diary_records=diary_records)
+    else:
+        return jsonify(message="User not logged in"), 401
+@app.route('/diary', methods=['GET'])
+def get_diary_records():
+    user_id = session.get('user_id')
 
     if user_id:
         with db_connection.cursor() as cursor:
@@ -284,11 +306,108 @@ def get_diary_records():
                 'profile_picture': 'default_profile_picture.png'
             }
 
-        print("Debug - diary_records:", start_date)
-
-        return render_template('diary.html', user=user, diary_records=diary_records)
+        return render_template('diary.html', user=user)
     else:
         return jsonify(message="User not logged in"), 401
+
+
+@app.route('/notes')
+def view_notes():
+    user_id = session.get('user_id')
+
+    if user_id:
+        with db_connection.cursor() as cursor:
+            # Fetch user information
+            cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
+            user_info = cursor.fetchone()
+
+            if user_info:
+                user = {
+                    'first_name': user_info[0],
+                    'last_name': user_info[1],
+                    'profile_picture': user_info[2]
+                }
+            else:
+                user = {
+                    'first_name': 'User',
+                    'last_name': '',
+                    'profile_picture': 'default_profile_picture.png'
+                }
+
+            # Fetch notes for the user
+            cursor.execute("SELECT note_date, content FROM notes WHERE user_id = %s", (user_id,))
+            user_notes = cursor.fetchall()
+
+            return render_template('notes.html', user=user, user_notes=user_notes)
+    else:
+        return redirect(url_for('login'))
+
+
+@app.route('/media', methods=['GET', 'POST'])
+def view_media():
+    user_id = session.get('user_id')
+
+    if user_id:
+        # Fetch user information
+        cursor = db_connection.cursor()
+        cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
+        user_info = cursor.fetchone()
+
+        if user_info:
+            user = {
+                'first_name': user_info[0],
+                'last_name': user_info[1],
+                'profile_picture': user_info[2]
+            }
+        else:
+            user = {
+                'first_name': 'User',
+                'last_name': '',
+                'profile_picture': 'default_profile_picture.png'
+            }
+        if request.method == 'POST':
+            file = request.files['file']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                upload_datetime = datetime.now()
+
+                cursor = db_connection.cursor()
+                cursor.execute(
+                    "INSERT INTO media (user_id, media_type, media_data, upload_datetime) VALUES (%s, %s, %s, %s)",
+                    (user_id, filename, upload_datetime))
+                db_connection.commit()
+
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                flash('File uploaded successfully', 'success')
+                return redirect(url_for('view_media'))
+
+        cursor = db_connection.cursor()
+        cursor.execute("SELECT media_id, media_type, media_data, upload_datetime FROM media WHERE user_id = %s",
+                       (user_id,))
+        user_media = cursor.fetchall()
+
+        return render_template('media.html', user=user, user_media=user_media)
+    else:
+        return redirect(url_for('login'))
+
+
+@app.route('/delete/<int:media_id>', methods=['POST'])
+def delete_media(media_id):
+    user_id = session.get('user_id')
+
+    if user_id:
+        cursor = db_connection.cursor()
+        cursor.execute("SELECT media_data FROM media WHERE media_id = %s AND user_id = %s", (media_id, user_id))
+        media_data = cursor.fetchone()
+
+        if media_data:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], media_data[0])
+            os.remove(file_path)
+            cursor.execute("DELETE FROM media WHERE media_id = %s", (media_id,))
+            db_connection.commit()
+            flash('File deleted successfully', 'success')
+
+    return redirect(url_for('view_media'))
 
 
 @app.route('/logout')
