@@ -2,7 +2,7 @@ import logging
 import os
 import mysql.connector
 import mysql.connector.pooling
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 from flask_session import Session
@@ -46,6 +46,26 @@ Session(app)
 @app.before_request
 def cleanup():
     session.modified = True
+
+
+def fetch_user_info(cursor, user_id):
+    cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
+    user_info = cursor.fetchone()
+
+    if user_info:
+        user = {
+            'first_name': user_info[0],
+            'last_name': user_info[1],
+            'profile_picture': user_info[2]
+        }
+    else:
+        user = {
+            'first_name': 'User',
+            'last_name': '',
+            'profile_picture': 'default_profile_picture.png'
+        }
+    return user
+
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -140,21 +160,7 @@ def user_dashboard():
 
     if user_id:
         with db_connection.cursor() as cursor:
-            cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
-            user_info = cursor.fetchone()
-
-        if user_info:
-            user = {
-                'first_name': user_info[0],
-                'last_name': user_info[1],
-                'profile_picture': user_info[2]
-            }
-        else:
-            user = {
-                'first_name': 'User',
-                'last_name': '',
-                'profile_picture': 'default_profile_picture.png'
-            }
+            user = fetch_user_info(cursor, user_id)
 
         return render_template('user_dashboard.html', user=user)
     else:
@@ -288,21 +294,7 @@ def get_diary_records():
 
     if user_id:
         with db_connection.cursor() as cursor:
-            cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
-            user_info = cursor.fetchone()
-
-        if user_info:
-            user = {
-                'first_name': user_info[0],
-                'last_name': user_info[1],
-                'profile_picture': user_info[2]
-            }
-        else:
-            user = {
-                'first_name': 'User',
-                'last_name': '',
-                'profile_picture': 'default_profile_picture.png'
-            }
+            user = fetch_user_info(cursor, user_id)
 
         return render_template('diary.html', user=user)
     else:
@@ -315,28 +307,13 @@ def view_notes():
 
     if user_id:
         with db_connection.cursor() as cursor:
-            # Fetch user information
-            cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
-            user_info = cursor.fetchone()
-
-            if user_info:
-                user = {
-                    'first_name': user_info[0],
-                    'last_name': user_info[1],
-                    'profile_picture': user_info[2]
-                }
-            else:
-                user = {
-                    'first_name': 'User',
-                    'last_name': '',
-                    'profile_picture': 'default_profile_picture.png'
-                }
+            user = fetch_user_info(cursor, user_id)
 
             # Fetch notes for the user
             cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE user_id = %s", (user_id,))
             user_notes = cursor.fetchall()
 
-            return render_template('notes.html', user=user, user_notes=user_notes)
+        return render_template('notes.html', user=user, user_notes=user_notes)
     else:
         return redirect(url_for('login'))
 
@@ -346,43 +323,30 @@ def view_media():
     user_id = session.get('user_id')
 
     if user_id:
-        # Fetch user information
-        cursor = db_connection.cursor()
-        cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
-        user_info = cursor.fetchone()
+        with db_connection.cursor() as cursor:
+            user = fetch_user_info(cursor, user_id)
 
-        if user_info:
-            user = {
-                'first_name': user_info[0],
-                'last_name': user_info[1],
-                'profile_picture': user_info[2]
-            }
-        else:
-            user = {
-                'first_name': 'User',
-                'last_name': '',
-                'profile_picture': 'default_profile_picture.png'
-            }
-        if request.method == 'POST':
-            file = request.files['file']
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                upload_datetime = datetime.now()
+            if request.method == 'POST':
+                file = request.files['file']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    upload_datetime = datetime.now()
 
-                cursor = db_connection.cursor()
-                cursor.execute(
-                    "INSERT INTO media (user_id, media_type, media_data, upload_datetime) VALUES (%s, %s, %s, %s)",
-                    (user_id, filename, upload_datetime))
-                db_connection.commit()
+                    try:
+                        cursor.execute(
+                            "INSERT INTO media (user_id, media_type, media_data, upload_datetime) VALUES (%s, %s, %s, %s)",
+                            (user_id, filename, upload_datetime))
+                        db_connection.commit()
 
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                flash('File uploaded successfully', 'success')
-                return redirect(url_for('view_media'))
+                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        flash('File uploaded successfully', 'success')
+                    except Exception as e:
+                        flash('File upload failed', 'danger')
+                    return redirect(url_for('view_media'))
 
-        cursor = db_connection.cursor()
-        cursor.execute("SELECT media_id, media_type, media_data, upload_datetime FROM media WHERE user_id = %s",
-                       (user_id,))
-        user_media = cursor.fetchall()
+            cursor.execute("SELECT media_id, media_type, media_data, upload_datetime FROM media WHERE user_id = %s",
+                           (user_id,))
+            user_media = cursor.fetchall()
 
         return render_template('media.html', user=user, user_media=user_media)
     else:
@@ -410,7 +374,8 @@ def delete_media(media_id):
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)  # Remove user_id from the session
+    for key in list(session.keys()):
+        session.pop(key)
     return redirect(url_for('role_select'))  # Redirect to login page
 
 
