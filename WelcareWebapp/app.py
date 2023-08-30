@@ -1,16 +1,27 @@
+import logging
 import os
 import traceback
 from datetime import datetime, timedelta
+<<<<<<< HEAD
+import mysql.connector
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+=======
 import mysql.connector.pooling
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash
+>>>>>>> origin/master
 from werkzeug.utils import secure_filename
 from flask_session import Session
+from flask import render_template, redirect, url_for, session
+import traceback
+import datetime
 
 app = Flask(__name__)
 
 app.secret_key = 'welcare'
 
+<<<<<<< HEAD
+=======
 # Establish the database connection
 # db_connection = mysql.connector.connect(
 #     host='welcare.org.uk',
@@ -19,6 +30,7 @@ app.secret_key = 'welcare'
 #     database='welcarewebapp'
 # )
 
+>>>>>>> origin/master
 db_config = {
     "host": "welcare.org.uk",
     "user": "welcare",
@@ -256,11 +268,9 @@ def update_profile():
 
 
 @app.route('/diary', methods=['GET'])
-def diary():
+def get_diary_records():
     user_id = session.get('user_id')
-
     if user_id:
-        # Assuming you have already defined the db_connection variable earlier in your code
         with db_connection.cursor() as cursor:
             cursor.execute("SELECT first_name, last_name, profile_picture FROM users WHERE user_id = %s", (user_id,))
             user_info = cursor.fetchone()
@@ -277,32 +287,40 @@ def diary():
                 'last_name': '',
                 'profile_picture': 'default_profile_picture.png'
             }
-    else:
-        return redirect(url_for('login'))
 
-    # Calculate the date 7 days ago from today
-    seven_days_ago = datetime.now() - timedelta(days=7)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
 
-    try:
+        print("Debug - start_date:", start_date)
+        print("Debug - end_date:", end_date)
+        print("Debug - user_id:", user_id)
+
+        query = "SELECT attended_datetime FROM diary_records WHERE user_id = %s AND attended_datetime >= %s AND attended_datetime <= %s"
+        print("Debug - SQL Query:", query)
+
+        # Fetch diary records using user_id, start_date, and end_date
         with db_connection.cursor() as cursor:
             cursor.execute(
-                "SELECT attended_datetime FROM diary_records WHERE user_id = %s AND attended_datetime >= %s ORDER BY attended_datetime DESC",
-                (user_id, seven_days_ago)
+                "SELECT attended_datetime FROM diary_records WHERE user_id = %s AND attended_datetime >= %s AND attended_datetime <= %s",
+                (user_id, start_date, end_date)
             )
-            diary_records_tuples = cursor.fetchall()
+            diary_records = cursor.fetchall()
 
-        diary_records = [{'attended_datetime': record[0]} for record in diary_records_tuples]
+        print("Debug - diary_records:", diary_records)
 
-        return render_template('diary.html', user=user, diary_records=diary_records)
-    except Exception as e:
-        traceback.print_exc()
-        return "An error occurred"
+        # Convert records to a list of dictionaries
+        formatted_records = [{'date': record[0].strftime('%Y-%m-%d'), 'time': record[0].strftime('%H:%M:%S')} for record in diary_records]
+
+        # Return the data as JSON
+        return jsonify(records=formatted_records)
+    else:
+        return jsonify(message="User not logged in"), 401
 
 
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)  # Remove user_id from the session
-    return redirect(url_for('login'))  # Redirect to login page
+    return redirect(url_for('role_select'))  # Redirect to login page
 
 
 if __name__ == "__main__":
