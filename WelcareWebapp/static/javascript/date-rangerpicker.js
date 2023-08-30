@@ -28,26 +28,3 @@ $(function() {
 
     cb(start, end);
 });
-
-$('#reportrange').on('DOMSubtreeModified', function(){
-    if($('#reportrange span').text() != ''){
-        updateDiaryRecords();
-    }
-})
-
-function updateDiaryRecords() {
-        $.ajax({
-            url: '/diary',  // The URL to your route that handles diary records
-            method: 'GET',
-            data: {
-                start_date: moment($('#reportrange span').text().split(' - ')[0], 'MMMM D, YYYY').format('YYYY-MM-DD'),
-                end_date: moment($('#reportrange span').text().split(' - ')[1], 'MMMM D, YYYY').format('YYYY-MM-DD')
-            },
-            success: function(response) {
-                $('#diary-records-body').html(response);  // Update the diary records table body
-            },
-            error: function(xhr, status, error) {
-                console.error(error);
-            }
-        });
-    }
