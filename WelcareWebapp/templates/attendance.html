@@ -33,53 +33,25 @@
             <div class="card">
                 <div class="card-body">
                     <div class="gallery">
-                        <div class="video-item">
-                            <img src="https://www.igeeksblog.com/wp-content/uploads/2021/03/how-to-add-a-custom-thumbnail-to-instagram-video.jpg" alt="Video Thumbnail" data-video="video-url.mp4">
-                            <div class="video-title">Video title</div>
-                            <small>Uploaded on <b>August 14, 1947</b></small>
-                        </div>
-                        <div class="video-item">
-                            <img src="https://www.igeeksblog.com/wp-content/uploads/2021/03/how-to-add-a-custom-thumbnail-to-instagram-video.jpg" alt="Video Thumbnail" data-video="video-url.mp4">
-                            <div class="video-title">Video title</div>
-                            <small>Uploaded on <b>August 14, 1947</b></small>
-                        </div>
-                        <div class="video-item">
-                            <img src="https://www.igeeksblog.com/wp-content/uploads/2021/03/how-to-add-a-custom-thumbnail-to-instagram-video.jpg" alt="Video Thumbnail" data-video="video-url.mp4">
-                            <div class="video-title">Video title</div>
-                            <small>Uploaded on <b>August 14, 1947</b></small>
-                        </div>
-                        <div class="video-item">
-                            <img src="https://www.igeeksblog.com/wp-content/uploads/2021/03/how-to-add-a-custom-thumbnail-to-instagram-video.jpg" alt="Video Thumbnail" data-video="video-url.mp4">
-                            <div class="video-title">Video title</div>
-                            <small>Uploaded on <b>August 14, 1947</b></small>
-                        </div>
-                        <div class="video-item">
-                            <img src="https://www.igeeksblog.com/wp-content/uploads/2021/03/how-to-add-a-custom-thumbnail-to-instagram-video.jpg" alt="Video Thumbnail" data-video="video-url.mp4">
-                            <div class="video-title">Video title</div>
-                            <small>Uploaded on <b>August 14, 1947</b></small>
-                        </div>
-                        <div class="video-item">
-                            <img src="https://www.igeeksblog.com/wp-content/uploads/2021/03/how-to-add-a-custom-thumbnail-to-instagram-video.jpg" alt="Video Thumbnail" data-video="video-url.mp4">
-                            <div class="video-title">Video title</div>
-                            <small>Uploaded on <b>August 14, 1947</b></small>
-                        </div>
-                        <!-- Add more video items here -->
-                    </div>
+                        <!-- Check if there are records or not -->
+                        <div id="attendance-records-body" class="text-muted"></div>
                     <div class="popup">
                         <div class="popup-content">
                             <video controls id="video-player"></video>
                         </div>
-                    </div>      
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
     <script>
         var userData = {
             first_name: "{{ user.first_name }}",
             last_name: "{{ user.last_name }}",
             profile_picture: "{{ url_for('static', filename=user.profile_picture) }}"
         };
+
     </script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>

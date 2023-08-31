@@ -23,6 +23,7 @@ $(function() {
 
             // Send AJAX request
             updateDiaryRecords(start_date, end_date);
+            updateAttendanceRecords(start_date, end_date);
         }
     }, cb);
 

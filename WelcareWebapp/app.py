@@ -6,6 +6,9 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 from flask_session import Session
+import cv2
+import os
+import base64
 
 app = Flask(__name__)
 
@@ -18,6 +21,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 # Establish the database connection
 # db_connection = mysql.connector.connect(
@@ -65,7 +69,6 @@ def fetch_user_info(cursor, user_id):
             'profile_picture': 'default_profile_picture.png'
         }
     return user
-
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -269,6 +272,7 @@ def update_profile():
 
     return redirect(url_for('profile'))
 
+
 @app.route('/getrecords', methods=['GET'])
 def get_records():
     user_id = session.get('user_id')
@@ -370,6 +374,87 @@ def delete_media(media_id):
             flash('File deleted successfully', 'success')
 
     return redirect(url_for('view_media'))
+
+
+@app.route('/recordset', methods=['GET'])
+def get_attendance_records():
+    user_id = session.get('user_id')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    print("User ID:", user_id)
+    print("Start Date:", start_date)
+    print("End Date:", end_date)
+
+    if user_id:
+        with db_connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT attendance_id, attendance_datetime, videotitle, media_path FROM welcare_attendance WHERE user_id = %s AND attendance_datetime BETWEEN %s AND %s",
+                (user_id, start_date, end_date)
+            )
+            attendance_records = cursor.fetchall()
+            print("Attendance Records:", attendance_records)
+
+            video_data = []
+            common_thumbnail_width = 200  # Set the common width for all thumbnails
+            common_thumbnail_height = 150  # Set the common height for all thumbnails
+
+            for record in attendance_records:
+                video_path = os.path.join(app.static_folder, 'attendance', record[3])
+                cap = cv2.VideoCapture(video_path)
+                ret, frame = cap.read()
+
+                if ret:
+                    original_height, original_width, _ = frame.shape
+                    aspect_ratio = original_width / original_height
+
+                    # Calculate the new width and height based on the common_thumbnail_width and aspect_ratio
+                    if aspect_ratio > 1:
+                        new_width = common_thumbnail_width
+                        new_height = int(common_thumbnail_width / aspect_ratio)
+                    else:
+                        new_height = common_thumbnail_height
+                        new_width = int(common_thumbnail_height * aspect_ratio)
+
+                    # Resize the frame to the new dimensions
+                    thumbnail = cv2.resize(frame, (new_width, new_height))
+
+                    # Calculate black borders if needed
+                    border_top = (common_thumbnail_height - new_height) // 2
+                    border_bottom = common_thumbnail_height - new_height - border_top
+                    border_left = (common_thumbnail_width - new_width) // 2
+                    border_right = common_thumbnail_width - new_width - border_left
+                    thumbnail = cv2.copyMakeBorder(thumbnail, border_top, border_bottom, border_left, border_right,
+                                                   cv2.BORDER_CONSTANT, value=[0, 0, 0])
+
+                    ret, thumbnail_data = cv2.imencode('.jpg', thumbnail, [int(cv2.IMWRITE_JPEG_QUALITY), 400])
+                    if ret:
+                        thumbnail_base64 = base64.b64encode(thumbnail_data).decode('utf-8')
+                        video_url = url_for('static', filename='attendance/' + record[3])
+                        video_data.append({
+                            'thumbnail_data': thumbnail_base64,
+                            'video_url': video_url,
+                            'attendance_datetime': record[1],
+                            'videotitle': record[2],
+                        })
+                cap.release()
+
+        return jsonify({'attendance_records': attendance_records, 'video_data': video_data})
+    else:
+        return jsonify(message="User not logged in"), 401
+
+
+@app.route('/attendance', methods=['GET'])
+def view_attendance():
+    user_id = session.get('user_id')
+
+    if user_id:
+        with db_connection.cursor() as cursor:
+            user = fetch_user_info(cursor, user_id)
+
+        return render_template('attendance.html', user=user)
+    else:
+        return jsonify(message="User not logged in"), 401
 
 
 @app.route('/logout')
