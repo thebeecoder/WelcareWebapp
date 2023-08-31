@@ -304,6 +304,34 @@ def get_diary_records():
     else:
         return jsonify(message="User not logged in"), 401
 
+@app.route('/getnotes')
+def get_notes():
+    user_id = session.get('user_id')
+
+    if user_id:
+        with db_connection.cursor() as cursor:
+            # Fetch notes for the user
+            cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE user_id = %s", (user_id,))
+            user_notes = cursor.fetchall()
+
+            # Convert notes to a list of dictionaries for JSON response
+            notes_list = []
+            for note in user_notes:
+                note_dict = {
+                    'note_date': note[0],
+                    'title': note[1],
+                    'content': note[2],
+                    'note_id': note[3]
+                }
+                notes_list.append(note_dict)
+
+            # Create a JSON response
+            response = {'notes': notes_list}
+            return jsonify(response)
+    else:
+        return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
+
+
 
 @app.route('/notes')
 def view_notes():
@@ -313,13 +341,10 @@ def view_notes():
         with db_connection.cursor() as cursor:
             user = fetch_user_info(cursor, user_id)
 
-            # Fetch notes for the user
-            cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE user_id = %s", (user_id,))
-            user_notes = cursor.fetchall()
-
-        return render_template('notes.html', user=user, user_notes=user_notes)
+        return render_template('notes.html', user=user)
     else:
         return redirect(url_for('login'))
+
 
 
 @app.route('/media', methods=['GET', 'POST'])
