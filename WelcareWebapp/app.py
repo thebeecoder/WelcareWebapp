@@ -309,9 +309,12 @@ def get_notes():
     user_id = session.get('user_id')
 
     if user_id:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
         with db_connection.cursor() as cursor:
             # Fetch notes for the user
-            cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE user_id = %s", (user_id,))
+            cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE user_id = %s AND note_date BETWEEN %s AND %s", (user_id, start_date, end_date))
             user_notes = cursor.fetchall()
 
             # Convert notes to a list of dictionaries for JSON response
