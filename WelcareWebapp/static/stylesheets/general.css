@@ -165,6 +165,10 @@ a:hover {
     margin-bottom: 20px;
 }
 
+th, td {
+    vertical-align: middle; /* Vertical centering */
+}
+
 /* label animation work */
 .input-container {
     position: relative;

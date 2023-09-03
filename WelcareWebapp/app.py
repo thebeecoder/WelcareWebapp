@@ -9,6 +9,7 @@ from flask_session import Session
 import cv2
 import os
 import base64
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -37,7 +38,7 @@ db_config = {
     "password": "welcarewebapp",
     "database": "welcarewebapp",
     "pool_name": "my_pool",
-    "pool_size": 5,
+    "pool_size": 32,
     "pool_reset_session": False,
 }
 connection_pool = mysql.connector.pooling.MySQLConnectionPool(**db_config)
@@ -68,6 +69,8 @@ def fetch_user_info(cursor, user_id):
             'last_name': '',
             'profile_picture': 'default_profile_picture.png'
         }
+
+    cursor.close()
     return user
 
 
@@ -115,6 +118,11 @@ def login():
         except Exception as e:
             print("An error occurred:", e)
 
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
+
     return render_template('login.html', message=message, user=user, type=type_param)
 
 
@@ -129,20 +137,29 @@ def signup():
         password = request.form['password']
         role = "User"
 
-        # Using context manager for cursor
-        with db_connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
-            existing_users = cursor.fetchall()
+        try:
+            # Using context manager for cursor
+            with db_connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+                existing_users = cursor.fetchall()
 
-            if any(user[1] == email for user in existing_users):
-                message = "User already exists."
-            else:
-                # Insert new user into the database
-                cursor.execute(
-                    "INSERT INTO users (email, first_name, last_name, password, role) VALUES (%s, %s, %s, %s, %s)",
-                    (email, first_name, last_name, password, role))
-                db_connection.commit()
-                message = "Successfully registered!"
+                if any(user[1] == email for user in existing_users):
+                    message = "User already exists."
+                else:
+                    # Insert new user into the database
+                    cursor.execute(
+                        "INSERT INTO users (email, first_name, last_name, password, role) VALUES (%s, %s, %s, %s, %s)",
+                        (email, first_name, last_name, password, role))
+                    db_connection.commit()
+                    message = "Successfully registered!"
+
+        except Exception as e:
+            print("An error occurred:", e)
+            
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
 
     return render_template('signup.html', message=message)
 
@@ -170,6 +187,94 @@ def user_dashboard():
         return redirect(url_for('login'))  # Redirect to login if user ID not found in session
 
 
+@app.route('/manage_users')
+def manage_users():
+    user_id = session.get('user_id')
+
+    if user_id:
+        with db_connection.cursor() as cursor:
+            user = fetch_user_info(cursor, user_id)
+
+        return render_template('manage_users.html', user=user)
+    else:
+        return redirect(url_for('login'))  # Redirect to login if user ID not found in session
+
+
+@app.route('/getUsersList', methods=['GET'])
+def get_users_list():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            with db_connection.cursor() as cursor:
+                cursor.execute("Select * from users")
+                user_records = cursor.fetchall()
+
+        except Exception as e:
+            print("An error occurred:", e)
+            
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
+
+        return jsonify(user_records=user_records)
+    else:
+        return jsonify(message="User not logged in"), 401
+    
+
+@app.route('/getUserDetails', methods=['GET'])
+def get_user_details():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            with db_connection.cursor() as cursor:
+                cursor.execute("Select * from users where user_id = %s", (request.args.get('userID')))
+                user_details = cursor.fetchall()
+                return jsonify(user_details=user_details)
+
+        except Exception as e:
+            print("An error occurred:", e)
+            
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
+
+    else:
+        return jsonify(message="User not logged in"), 401
+    
+
+@app.route('/deleteUser', methods=['GET'])
+def delete_user():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            with db_connection.cursor() as cursor:
+                # Delete the user
+                cursor.execute("DELETE FROM users WHERE user_id = %s", (request.args.get('userID')))
+                # Commit the transaction
+                db_connection.commit()
+
+        except Exception as e:
+            # Handle exceptions, log errors, or return appropriate error responses
+            print("An error occurred:", e)
+            db_connection.rollback()  # Rollback the transaction if an error occurred
+
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
+
+        # You can return a response or JSON data here based on your application's requirements
+        return jsonify(message="User deleted successfully")
+    else:
+        return jsonify(message="User not logged in"), 401
+
+    
+
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user_id' not in session:
@@ -177,11 +282,20 @@ def profile():
 
     user_id = session['user_id']
 
-    with db_connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT username, first_name, last_name, profile_picture, email, password FROM users WHERE user_id = %s",
-            (user_id,))
-        user_info = cursor.fetchone()
+    try:
+        with db_connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT username, first_name, last_name, profile_picture, email, password FROM users WHERE user_id = %s",
+                (user_id))
+            user_info = cursor.fetchone()
+
+    except Exception as e:
+        print("An error occurred:", e)
+        
+    finally:
+        # Close the database connection when done
+        if db_connection.is_connected():
+            db_connection.close()
 
     if user_info:
         user = {
@@ -211,6 +325,7 @@ def profile():
         new_last_name = request.form['last_name']
         new_password = request.form['password']
 
+    try:
         with db_connection.cursor() as cursor:
             cursor.execute(
                 "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s WHERE user_id=%s",
@@ -226,6 +341,14 @@ def profile():
                 )
                 db_connection.commit()
             user['profile_picture'] = new_profile_picture
+
+    except Exception as e:
+        print("An error occurred:", e)
+        
+    finally:
+        # Close the database connection when done
+        if db_connection.is_connected():
+            db_connection.close()
 
     return render_template('profile.html', user=user)
 
@@ -262,34 +385,24 @@ def update_profile():
                 )
                 db_connection.commit()
 
-    # Update the user's profile information in the database
-    with db_connection.cursor() as cursor:
-        cursor.execute(
-            "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s WHERE user_id=%s",
-            (new_email, new_password, new_first_name, new_last_name, user_id)
-        )
-        db_connection.commit()
-
-    return redirect(url_for('profile'))
-
-
-@app.route('/getrecords', methods=['GET'])
-def get_records():
-    user_id = session.get('user_id')
-
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-
-    if user_id:
+    try:
+        # Update the user's profile information in the database
         with db_connection.cursor() as cursor:
             cursor.execute(
-                "SELECT attended_datetime FROM diary_records WHERE user_id = %s AND attended_datetime >= %s AND attended_datetime <= %s",
-                (user_id, start_date, end_date))
-            diary_records = cursor.fetchall()
+                "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s WHERE user_id=%s",
+                (new_email, new_password, new_first_name, new_last_name, user_id)
+            )
+            db_connection.commit()
 
-        return jsonify(diary_records=diary_records)
-    else:
-        return jsonify(message="User not logged in"), 401
+    except Exception as e:
+        print("An error occurred:", e)
+        
+    finally:
+        # Close the database connection when done
+        if db_connection.is_connected():
+            db_connection.close()
+
+    return redirect(url_for('profile'))
 
 
 @app.route('/diary', methods=['GET'])
@@ -303,37 +416,34 @@ def get_diary_records():
         return render_template('diary.html', user=user)
     else:
         return jsonify(message="User not logged in"), 401
+    
 
-@app.route('/getnotes')
-def get_notes():
+@app.route('/getrecords', methods=['GET'])
+def get_records():
     user_id = session.get('user_id')
 
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
     if user_id:
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
+        try:
+            with db_connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT attended_datetime FROM diary_records WHERE user_id = %s AND attended_datetime >= %s AND attended_datetime <= %s",
+                    (user_id, start_date, end_date))
+                diary_records = cursor.fetchall()
 
-        with db_connection.cursor() as cursor:
-            # Fetch notes for the user
-            cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE user_id = %s AND note_date BETWEEN %s AND %s", (user_id, start_date, end_date))
-            user_notes = cursor.fetchall()
+        except Exception as e:
+            print("An error occurred:", e)
+            
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
 
-            # Convert notes to a list of dictionaries for JSON response
-            notes_list = []
-            for note in user_notes:
-                note_dict = {
-                    'note_date': note[0],
-                    'title': note[1],
-                    'content': note[2],
-                    'note_id': note[3]
-                }
-                notes_list.append(note_dict)
-
-            # Create a JSON response
-            response = {'notes': notes_list}
-            return jsonify(response)
+        return jsonify(diary_records=diary_records)
     else:
-        return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
-
+        return jsonify(message="User not logged in"), 401
 
 
 @app.route('/notes')
@@ -347,7 +457,46 @@ def view_notes():
         return render_template('notes.html', user=user)
     else:
         return redirect(url_for('login'))
+    
 
+@app.route('/getnotes')
+def get_notes():
+    user_id = session.get('user_id')
+
+    if user_id:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        try:
+            with db_connection.cursor() as cursor:
+                # Fetch notes for the user
+                cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE user_id = %s AND note_date BETWEEN %s AND %s", (user_id, start_date, end_date))
+                user_notes = cursor.fetchall()
+
+                # Convert notes to a list of dictionaries for JSON response
+                notes_list = []
+                for note in user_notes:
+                    note_dict = {
+                        'note_date': note[0],
+                        'title': note[1],
+                        'content': note[2],
+                        'note_id': note[3]
+                    }
+                    notes_list.append(note_dict)
+
+                # Create a JSON response
+                response = {'notes': notes_list}
+                return jsonify(response)
+            
+        except Exception as e:
+            print("An error occurred:", e)
+            
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
+    else:
+        return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
 
 
 @app.route('/media', methods=['GET', 'POST'])
@@ -355,32 +504,42 @@ def view_media():
     user_id = session.get('user_id')
 
     if user_id:
-        with db_connection.cursor() as cursor:
-            user = fetch_user_info(cursor, user_id)
+        try:
+            with db_connection.cursor() as cursor:
+                user = fetch_user_info(cursor, user_id)
 
-            if request.method == 'POST':
-                file = request.files['file']
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    upload_datetime = datetime.now()
+                if request.method == 'POST':
+                    file = request.files['file']
+                    if file and allowed_file(file.filename):
+                        filename = secure_filename(file.filename)
+                        upload_datetime = datetime.now()
 
-                    try:
-                        cursor.execute(
-                            "INSERT INTO media (user_id, media_type, media_data, upload_datetime) VALUES (%s, %s, %s, %s)",
-                            (user_id, filename, upload_datetime))
-                        db_connection.commit()
+                        try:
+                            cursor.execute(
+                                "INSERT INTO media (user_id, media_type, media_data, upload_datetime) VALUES (%s, %s, %s, %s)",
+                                (user_id, filename, upload_datetime))
+                            db_connection.commit()
 
-                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                        flash('File uploaded successfully', 'success')
-                    except Exception as e:
-                        flash('File upload failed', 'danger')
-                    return redirect(url_for('view_media'))
+                            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                            flash('File uploaded successfully', 'success')
+                        except Exception as e:
+                            flash('File upload failed', 'danger')
+                        return redirect(url_for('view_media'))
 
-            cursor.execute("SELECT media_id, media_type, media_data, upload_datetime FROM media WHERE user_id = %s",
-                           (user_id,))
-            user_media = cursor.fetchall()
+                cursor.execute("SELECT media_id, media_type, media_data, upload_datetime FROM media WHERE user_id = %s",
+                            (user_id,))
+                user_media = cursor.fetchall()
 
-        return render_template('media.html', user=user, user_media=user_media)
+            return render_template('media.html', user=user, user_media=user_media)
+        
+        except Exception as e:
+            print("An error occurred:", e)
+            
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
+
     else:
         return redirect(url_for('login'))
 
@@ -415,59 +574,69 @@ def get_attendance_records():
     print("End Date:", end_date)
 
     if user_id:
-        with db_connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT attendance_id, attendance_datetime, videotitle, media_path FROM welcare_attendance WHERE user_id = %s AND attendance_datetime BETWEEN %s AND %s",
-                (user_id, start_date, end_date)
-            )
-            attendance_records = cursor.fetchall()
-            print("Attendance Records:", attendance_records)
+        try:
+            with db_connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT attendance_id, attendance_datetime, videotitle, media_path FROM welcare_attendance WHERE user_id = %s AND attendance_datetime BETWEEN %s AND %s",
+                    (user_id, start_date, end_date)
+                )
+                attendance_records = cursor.fetchall()
+                print("Attendance Records:", attendance_records)
 
-            video_data = []
-            common_thumbnail_width = 200  # Set the common width for all thumbnails
-            common_thumbnail_height = 150  # Set the common height for all thumbnails
+                video_data = []
+                common_thumbnail_width = 200  # Set the common width for all thumbnails
+                common_thumbnail_height = 150  # Set the common height for all thumbnails
 
-            for record in attendance_records:
-                video_path = os.path.join(app.static_folder, 'attendance', record[3])
-                cap = cv2.VideoCapture(video_path)
-                ret, frame = cap.read()
+                for record in attendance_records:
+                    video_path = os.path.join(app.static_folder, 'attendance', record[3])
+                    cap = cv2.VideoCapture(video_path)
+                    ret, frame = cap.read()
 
-                if ret:
-                    original_height, original_width, _ = frame.shape
-                    aspect_ratio = original_width / original_height
-
-                    # Calculate the new width and height based on the common_thumbnail_width and aspect_ratio
-                    if aspect_ratio > 1:
-                        new_width = common_thumbnail_width
-                        new_height = int(common_thumbnail_width / aspect_ratio)
-                    else:
-                        new_height = common_thumbnail_height
-                        new_width = int(common_thumbnail_height * aspect_ratio)
-
-                    # Resize the frame to the new dimensions
-                    thumbnail = cv2.resize(frame, (new_width, new_height))
-
-                    # Calculate black borders if needed
-                    border_top = (common_thumbnail_height - new_height) // 2
-                    border_bottom = common_thumbnail_height - new_height - border_top
-                    border_left = (common_thumbnail_width - new_width) // 2
-                    border_right = common_thumbnail_width - new_width - border_left
-                    thumbnail = cv2.copyMakeBorder(thumbnail, border_top, border_bottom, border_left, border_right,
-                                                   cv2.BORDER_CONSTANT, value=[0, 0, 0])
-
-                    ret, thumbnail_data = cv2.imencode('.jpg', thumbnail, [int(cv2.IMWRITE_JPEG_QUALITY), 400])
                     if ret:
-                        thumbnail_base64 = base64.b64encode(thumbnail_data).decode('utf-8')
-                        video_url = url_for('static', filename='attendance/' + record[3])
-                        video_data.append({
-                            'thumbnail_data': thumbnail_base64,
-                            'video_url': video_url,
-                            'attendance_datetime': record[1],
-                            'videotitle': record[2],
-                        })
-                cap.release()
+                        original_height, original_width, _ = frame.shape
+                        aspect_ratio = original_width / original_height
 
-        return jsonify({'attendance_records': attendance_records, 'video_data': video_data})
+                        # Calculate the new width and height based on the common_thumbnail_width and aspect_ratio
+                        if aspect_ratio > 1:
+                            new_width = common_thumbnail_width
+                            new_height = int(common_thumbnail_width / aspect_ratio)
+                        else:
+                            new_height = common_thumbnail_height
+                            new_width = int(common_thumbnail_height * aspect_ratio)
+
+                        # Resize the frame to the new dimensions
+                        thumbnail = cv2.resize(frame, (new_width, new_height))
+
+                        # Calculate black borders if needed
+                        border_top = (common_thumbnail_height - new_height) // 2
+                        border_bottom = common_thumbnail_height - new_height - border_top
+                        border_left = (common_thumbnail_width - new_width) // 2
+                        border_right = common_thumbnail_width - new_width - border_left
+                        thumbnail = cv2.copyMakeBorder(thumbnail, border_top, border_bottom, border_left, border_right,
+                                                    cv2.BORDER_CONSTANT, value=[0, 0, 0])
+
+                        ret, thumbnail_data = cv2.imencode('.jpg', thumbnail, [int(cv2.IMWRITE_JPEG_QUALITY), 400])
+                        if ret:
+                            thumbnail_base64 = base64.b64encode(thumbnail_data).decode('utf-8')
+                            video_url = url_for('static', filename='attendance/' + record[3])
+                            video_data.append({
+                                'thumbnail_data': thumbnail_base64,
+                                'video_url': video_url,
+                                'attendance_datetime': record[1],
+                                'videotitle': record[2],
+                            })
+                    cap.release()
+
+            return jsonify({'attendance_records': attendance_records, 'video_data': video_data})
+        
+        except Exception as e:
+            print("An error occurred:", e)
+            
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                db_connection.close()
+
     else:
         return jsonify(message="User not logged in"), 401
 
@@ -493,5 +662,4 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.debug = True
-    app.run()
+    app.run(debug=True)
