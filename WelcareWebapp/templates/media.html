@@ -9,6 +9,9 @@
 
     <link rel="stylesheet" type="text/css" href="../static/stylesheets/general.css">
     <link rel="stylesheet" type="text/css" href="../static/stylesheets/media.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+
 </head>
 <body>
     <div class="container">
@@ -32,13 +35,54 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row" id="preview-container"></div>
+                    <div class="modal fade" id="mediaModal" tabindex="-1" role="dialog" aria-labelledby="mediaModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-body">
+                                    <img id="mediaLargeView" src="" alt="Media" class="img-fluid">
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <form method="POST" class="text-center" enctype="multipart/form-data" action="{{ url_for('view_media') }}">
                         <div class="custom-file">
                             <input type="file" class="custom-file-input d-none" id="file-input" multiple accept="image/*, video/*" required>
-                            <label class="custom-file-label btn btn-light" for="file-input"><i class="fas fa-photo-video"></i> &nbsp; Select media files</label>
+                            <label class="custom-file-label btn btn-light" for="" id="selectMediaBtn"><i class="fas fa-photo-video"></i> &nbsp; Select media files</label>
                         </div>
-                        <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-upload"></i> &nbsp; Upload files</button>
+                        <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-upload"></i> &nbsp; Save</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="mediaSourceModal" tabindex="-1" role="dialog" aria-labelledby="mediaSourceModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mediaSourceModalLabel">Select Media Source</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <p>Choose how you want to add media:</p>
+                    </div>
+                    <div class="row">
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-primary" id="openCameraBtn">Open Camera</button>
+                        </div>
+                        <div class="col text-center">
+                            <button type="button" class="btn btn-secondary" id="uploadFromDeviceBtn">Upload from Device</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                            <video id="cameraPreview" autoplay playsinline style="display: none;"></video>
+                </div>
                 </div>
             </div>
         </div>
@@ -59,5 +103,8 @@
     <script src="../static/javascript/setup.js"></script>
     <script src="../static/javascript/user-sidebar.js"></script>
     <script src="../static/javascript/media.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+
 </body>
 </html>

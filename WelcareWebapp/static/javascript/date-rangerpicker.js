@@ -25,6 +25,7 @@ $(function() {
             updateDiaryRecords(start_date, end_date);
             updateAttendanceRecords(start_date, end_date);
             updateNotesRecords(start_date, end_date);
+            updateMediaRecords(start_date, end_date);
         }
     }, cb);
 
