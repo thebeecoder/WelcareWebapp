@@ -15,14 +15,14 @@ app = Flask(__name__)
 
 app.secret_key = 'welcare'
 UPLOAD_FOLDER = os.path.join('static', 'media')  # Set the path to static/media
-ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mkv'}
+
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mov'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 # Establish the database connection
 # db_connection = mysql.connector.connect(
@@ -499,6 +499,138 @@ def get_notes():
         return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
 
 
+@app.route('/deletemedia', methods=['POST'])
+def delete_media():
+    user_id = session.get('user_id')
+
+    if user_id:
+        media_id = request.form.get('media_id')  # You can pass the media_id as a POST parameter
+
+        if media_id:
+            with db_connection.cursor() as cursor:
+                try:
+                    # First, fetch the media record to get the file name
+                    cursor.execute("SELECT media_data FROM media WHERE media_id = %s AND user_id = %s", (media_id, user_id))
+                    media_data = cursor.fetchone()
+
+                    if media_data:
+                        filename = media_data[0]
+
+                        # Delete the record from the database
+                        cursor.execute("DELETE FROM media WHERE media_id = %s AND user_id = %s", (media_id, user_id))
+                        db_connection.commit()
+
+                        # Delete the associated file from your server's storage
+                        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+
+                        return jsonify({'message': 'Media deleted successfully'}, 200)
+                    else:
+                        return jsonify({'error': 'Media not found'}, 404)
+
+                except Exception as e:
+                    return jsonify({'error': 'Failed to delete media'}, 500)
+
+        else:
+            return jsonify({'error': 'Media ID not provided'}, 400)
+
+    else:
+        return jsonify({'error': 'User not authenticated'}, 401)
+
+@app.route('/getmedia', methods=['GET'])
+def get_media():
+    user_id = session.get('user_id')
+
+    if user_id:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        with db_connection.cursor() as cursor:
+            cursor.execute("SELECT media_id, mediatitle, media_type, upload_datetime, media_data FROM media WHERE user_id = %s AND upload_datetime BETWEEN %s AND %s", (user_id, start_date, end_date))
+            user_media = cursor.fetchall()
+
+        # Convert media records to a list of dictionaries
+        media_list = []
+        for media in user_media:
+            media_dict = {
+                'media_id': media[0],
+                'mediatitle': media[1],
+                'media_type': media[2],
+                'upload_datetime': media[3].strftime('%Y-%m-%d %H:%M:%S'),
+                'media_data': media[4]
+            }
+            # Generate video thumbnails and convert to base64
+            if media_dict['media_type'].startswith('video'):
+                video_path = os.path.join('static/media', media_dict['media_data'])
+                thumbnail_base64 = generate_video_thumbnail(video_path)
+                media_dict['thumbnail_base64'] = thumbnail_base64
+
+            media_list.append(media_dict)
+
+        # Return a JSON response with media records
+        return jsonify({'media': media_list})
+    else:
+        return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
+
+
+def generate_video_thumbnail(video_path):
+    # Capture the video using OpenCV
+    cap = cv2.VideoCapture(video_path)
+
+    # Read the first frame
+    ret, frame = cap.read()
+
+    # Check if the frame was read successfully
+    if ret:
+        # Resize the frame to your desired thumbnail size
+        thumbnail_size = (200, 200)  # Adjust the size as needed
+        frame = cv2.resize(frame, thumbnail_size)
+
+        # Convert the frame to base64
+        _, buffer = cv2.imencode('.jpg', frame)
+        thumbnail_base64 = base64.b64encode(buffer).decode()
+
+        # Release the video capture
+        cap.release()
+
+        return thumbnail_base64
+    else:
+        # Release the video capture and return an empty string if the video couldn't be read
+        cap.release()
+        return ''
+
+@app.route('/insertmedia', methods=['POST'])
+def insert_media():
+    user_id = session.get('user_id')
+
+    if user_id:
+        with db_connection.cursor() as cursor:
+            user = fetch_user_info(cursor, user_id)
+
+            if request.method == 'POST':
+                file = request.files['file']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    upload_datetime = datetime.now()
+
+                    try:
+                        cursor.execute(
+                            "INSERT INTO media (user_id, media_type, mediatitle, media_data, upload_datetime) VALUES (%s, %s, %s, %s, %s)",
+                            (user_id, filename, upload_datetime))
+                        db_connection.commit()
+
+                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        flash('File uploaded successfully', 'success')
+                        return jsonify({'message': 'File uploaded successfully'})
+                    except Exception as e:
+                        flash('File upload failed', 'danger')
+                        return jsonify({'error': 'File upload failed'})
+
+            return jsonify({'error': 'Invalid request'}), 400  # Bad request status code
+    else:
+        return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
+
 @app.route('/media', methods=['GET', 'POST'])
 def view_media():
     user_id = session.get('user_id')
@@ -507,28 +639,6 @@ def view_media():
         try:
             with db_connection.cursor() as cursor:
                 user = fetch_user_info(cursor, user_id)
-
-                if request.method == 'POST':
-                    file = request.files['file']
-                    if file and allowed_file(file.filename):
-                        filename = secure_filename(file.filename)
-                        upload_datetime = datetime.now()
-
-                        try:
-                            cursor.execute(
-                                "INSERT INTO media (user_id, media_type, media_data, upload_datetime) VALUES (%s, %s, %s, %s)",
-                                (user_id, filename, upload_datetime))
-                            db_connection.commit()
-
-                            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                            flash('File uploaded successfully', 'success')
-                        except Exception as e:
-                            flash('File upload failed', 'danger')
-                        return redirect(url_for('view_media'))
-
-                cursor.execute("SELECT media_id, media_type, media_data, upload_datetime FROM media WHERE user_id = %s",
-                            (user_id,))
-                user_media = cursor.fetchall()
 
             return render_template('media.html', user=user, user_media=user_media)
         
@@ -542,26 +652,6 @@ def view_media():
 
     else:
         return redirect(url_for('login'))
-
-
-@app.route('/delete/<int:media_id>', methods=['POST'])
-def delete_media(media_id):
-    user_id = session.get('user_id')
-
-    if user_id:
-        cursor = db_connection.cursor()
-        cursor.execute("SELECT media_data FROM media WHERE media_id = %s AND user_id = %s", (media_id, user_id))
-        media_data = cursor.fetchone()
-
-        if media_data:
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], media_data[0])
-            os.remove(file_path)
-            cursor.execute("DELETE FROM media WHERE media_id = %s", (media_id,))
-            db_connection.commit()
-            flash('File deleted successfully', 'success')
-
-    return redirect(url_for('view_media'))
-
 
 @app.route('/recordset', methods=['GET'])
 def get_attendance_records():
