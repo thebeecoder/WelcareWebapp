@@ -33,7 +33,7 @@ def allowed_file(filename):
 # )
 
 db_config = {
-    "host": "welcare.org.uk",
+    "host": "srv743.hstgr.io",
     "user": "u159785945_welcare",
     "password": "Welcarewebapp12",
     "database": "u159785945_welcarewebapp",
