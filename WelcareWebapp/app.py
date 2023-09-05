@@ -34,9 +34,9 @@ def allowed_file(filename):
 
 db_config = {
     "host": "welcare.org.uk",
-    "user": "welcare",
-    "password": "welcarewebapp",
-    "database": "welcarewebapp",
+    "user": "u159785945_welcare",
+    "password": "Welcarewebapp12",
+    "database": "u159785945_welcarewebapp",
     "pool_name": "my_pool",
     "pool_size": 32,
     "pool_reset_session": False,
@@ -155,7 +155,7 @@ def signup():
 
         except Exception as e:
             print("An error occurred:", e)
-            
+
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
@@ -212,7 +212,7 @@ def get_users_list():
 
         except Exception as e:
             print("An error occurred:", e)
-            
+
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
@@ -221,7 +221,7 @@ def get_users_list():
         return jsonify(user_records=user_records)
     else:
         return jsonify(message="User not logged in"), 401
-    
+
 
 @app.route('/getUserDetails', methods=['GET'])
 def get_user_details():
@@ -236,7 +236,7 @@ def get_user_details():
 
         except Exception as e:
             print("An error occurred:", e)
-            
+
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
@@ -244,7 +244,7 @@ def get_user_details():
 
     else:
         return jsonify(message="User not logged in"), 401
-    
+
 
 @app.route('/deleteUser', methods=['GET'])
 def delete_user():
@@ -273,7 +273,6 @@ def delete_user():
     else:
         return jsonify(message="User not logged in"), 401
 
-    
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -283,7 +282,9 @@ def profile():
     user_id = session['user_id']
 
     try:
-        with db_connection.cursor() as cursor:
+        with connection_pool.get_connection() as db_connection:  # Use connection_pool to get a database connection
+            # Use the db_connection for your database operations
+            cursor = db_connection.cursor()
             cursor.execute(
                 "SELECT username, first_name, last_name, profile_picture, email, password FROM users WHERE user_id = %s",
                 (user_id))
@@ -291,7 +292,7 @@ def profile():
 
     except Exception as e:
         print("An error occurred:", e)
-        
+
     finally:
         # Close the database connection when done
         if db_connection.is_connected():
@@ -326,7 +327,9 @@ def profile():
         new_password = request.form['password']
 
     try:
-        with db_connection.cursor() as cursor:
+        with connection_pool.get_connection() as db_connection:  # Use connection_pool to get a database connection
+            # Use the db_connection for your database operations
+            cursor = db_connection.cursor()
             cursor.execute(
                 "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s WHERE user_id=%s",
                 (new_email, new_password, new_first_name, new_last_name, user_id)
@@ -334,7 +337,9 @@ def profile():
             db_connection.commit()
 
         if new_profile_picture:
-            with db_connection.cursor() as cursor:
+            with connection_pool.get_connection() as db_connection:  # Use connection_pool to get a database connection
+                # Use the db_connection for your database operations
+                cursor = db_connection.cursor()
                 cursor.execute(
                     "UPDATE users SET profile_picture=%s WHERE user_id=%s",
                     (new_profile_picture, user_id)
@@ -344,14 +349,13 @@ def profile():
 
     except Exception as e:
         print("An error occurred:", e)
-        
+
     finally:
         # Close the database connection when done
         if db_connection.is_connected():
             db_connection.close()
 
     return render_template('profile.html', user=user)
-
 
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
@@ -378,7 +382,9 @@ def update_profile():
             profile_picture.save(new_picture_path)
 
             # Update the profile_picture value in the database
-            with db_connection.cursor() as cursor:
+            with connection_pool.get_connection() as db_connection:
+                # Use the db_connection for your database operations
+                cursor = db_connection.cursor()
                 cursor.execute(
                     "UPDATE users SET profile_picture=%s WHERE user_id=%s",
                     (new_picture_filename, user_id)
@@ -396,7 +402,7 @@ def update_profile():
 
     except Exception as e:
         print("An error occurred:", e)
-        
+
     finally:
         # Close the database connection when done
         if db_connection.is_connected():
@@ -416,7 +422,7 @@ def get_diary_records():
         return render_template('diary.html', user=user)
     else:
         return jsonify(message="User not logged in"), 401
-    
+
 
 @app.route('/getrecords', methods=['GET'])
 def get_records():
@@ -435,7 +441,7 @@ def get_records():
 
         except Exception as e:
             print("An error occurred:", e)
-            
+
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
@@ -457,7 +463,7 @@ def view_notes():
         return render_template('notes.html', user=user)
     else:
         return redirect(url_for('login'))
-    
+
 
 @app.route('/getnotes')
 def get_notes():
@@ -487,10 +493,10 @@ def get_notes():
                 # Create a JSON response
                 response = {'notes': notes_list}
                 return jsonify(response)
-            
+
         except Exception as e:
             print("An error occurred:", e)
-            
+
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
@@ -641,10 +647,10 @@ def view_media():
                 user = fetch_user_info(cursor, user_id)
 
             return render_template('media.html', user=user, user_media=user_media)
-        
+
         except Exception as e:
             print("An error occurred:", e)
-            
+
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
