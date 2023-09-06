@@ -72,7 +72,13 @@ function deleteAccount(userID){
             method: 'GET',
             data: {'userID': userID},
             success: function(response) {
-                getUsersList();
+                console.log(response)
+                if(response.message == 'Success'){
+                    getUsersList();
+                }
+                else{
+                    alert('An error occured.')
+                }
             }
         })
     }

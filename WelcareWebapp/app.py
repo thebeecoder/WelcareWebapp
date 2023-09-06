@@ -26,10 +26,10 @@ def allowed_file(filename):
 
 # Establish the database connection
 # db_connection = mysql.connector.connect(
-#     host='welcare.org.uk',
-#     user='welcare',
-#     password='welcarewebapp',
-#     database='welcarewebapp'
+#     host='srv743.hstgr.io',
+#     user='u159785945_welcare',
+#     password='Welcarewebapp12',
+#     database='u159785945_welcarewebapp'
 # )
 
 db_config = {
@@ -121,7 +121,8 @@ def login():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
-                db_connection.close()
+                cursor.close()
+                # db_connection.close()
 
     return render_template('login.html', message=message, user=user, type=type_param)
 
@@ -159,7 +160,8 @@ def signup():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
-                db_connection.close()
+                cursor.close()
+                # db_connection.close()
 
     return render_template('signup.html', message=message)
 
@@ -206,6 +208,7 @@ def get_users_list():
 
     if user_id:
         try:
+            db_connection = connection_pool.get_connection()
             with db_connection.cursor() as cursor:
                 cursor.execute("Select * from users")
                 user_records = cursor.fetchall()
@@ -216,6 +219,7 @@ def get_users_list():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
+                cursor.close()
                 db_connection.close()
 
         return jsonify(user_records=user_records)
@@ -240,8 +244,38 @@ def get_user_details():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
-                db_connection.close()
+                cursor.close()
+                # db_connection.close()
 
+    else:
+        return jsonify(message="User not logged in"), 401
+
+
+@app.route('/createProfile', methods=['GET'])
+def create_profile():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            with db_connection.cursor() as cursor:
+                # Delete the user
+                cursor.execute("INSERT INTO users (user_id) VALUES(%s)", (request.args.get('userID')))
+                # Commit the transaction
+                db_connection.commit()
+
+        except Exception as e:
+            # Handle exceptions, log errors, or return appropriate error responses
+            print("An error occurred:", e)
+            db_connection.rollback()  # Rollback the transaction if an error occurred
+
+        finally:
+            # Close the database connection when done
+            if db_connection.is_connected():
+                cursor.close()
+                # db_connection.close()
+
+        # You can return a response or JSON data here based on your application's requirements
+        return jsonify(message="User created successfully")
     else:
         return jsonify(message="User not logged in"), 401
 
@@ -252,6 +286,7 @@ def delete_user():
 
     if user_id:
         try:
+            db_connection = connection_pool.get_connection()
             with db_connection.cursor() as cursor:
                 # Delete the user
                 cursor.execute("DELETE FROM users WHERE user_id = %s", (request.args.get('userID')))
@@ -266,10 +301,11 @@ def delete_user():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
+                cursor.close()
                 db_connection.close()
 
         # You can return a response or JSON data here based on your application's requirements
-        return jsonify(message="User deleted successfully")
+        return jsonify(message="Success")
     else:
         return jsonify(message="User not logged in"), 401
 
@@ -296,7 +332,8 @@ def profile():
     finally:
         # Close the database connection when done
         if db_connection.is_connected():
-            db_connection.close()
+            cursor.close()
+                # db_connection.close()
 
     if user_info:
         user = {
@@ -353,7 +390,8 @@ def profile():
     finally:
         # Close the database connection when done
         if db_connection.is_connected():
-            db_connection.close()
+            cursor.close()
+                # db_connection.close()
 
     return render_template('profile.html', user=user)
 
@@ -406,7 +444,8 @@ def update_profile():
     finally:
         # Close the database connection when done
         if db_connection.is_connected():
-            db_connection.close()
+            cursor.close()
+                # db_connection.close()
 
     return redirect(url_for('profile'))
 
@@ -445,7 +484,8 @@ def get_records():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
-                db_connection.close()
+                cursor.close()
+                # db_connection.close()
 
         return jsonify(diary_records=diary_records)
     else:
@@ -500,7 +540,8 @@ def get_notes():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
-                db_connection.close()
+                cursor.close()
+                # db_connection.close()
     else:
         return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
 
@@ -654,7 +695,8 @@ def view_media():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
-                db_connection.close()
+                cursor.close()
+                # db_connection.close()
 
     else:
         return redirect(url_for('login'))
@@ -731,7 +773,8 @@ def get_attendance_records():
         finally:
             # Close the database connection when done
             if db_connection.is_connected():
-                db_connection.close()
+                cursor.close()
+                # db_connection.close()
 
     else:
         return jsonify(message="User not logged in"), 401
