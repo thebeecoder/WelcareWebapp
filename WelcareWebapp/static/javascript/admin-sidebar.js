@@ -17,7 +17,7 @@ $('.sidebar').html(
     
         <div class="modules-container">
             <div class="dashboard">
-                <a href="/user_dashboard">
+                <a href="/admin_dashboard">
                     <div class="sidebar-icon">
                         <i class="fas fa-home"></i>
                     </div>
@@ -30,25 +30,25 @@ $('.sidebar').html(
                 </div>
                 Manage users
             </a>
-            <a href="/diary">
+            <a href="/manage_diary">
                 <div class="sidebar-icon">
                     <i class="fas fa-book"></i>
                 </div>
                 Diary
             </a>
-            <a href="/notes">
+            <a href="/manage_notes">
                 <div class="sidebar-icon">
                     <i class="fas fa-sticky-note"></i>
                 </div>
                 Notes
             </a>
-            <a href="/media">
+            <a href="/manage_media">
                 <div class="sidebar-icon">
                     <i class="fas fa-photo-video"></i>
                 </div>
                 Media
             </a>
-            <a href="/attendance">
+            <a href="/manage_attendance">
                 <div class="sidebar-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>
