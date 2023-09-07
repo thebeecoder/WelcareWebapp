@@ -9,11 +9,11 @@ $('#adddNewNote').click(function(){
     $('#visit_date').val(date.toISOString().slice(0, 16))
 
     $('#submitButton').text('Add new note')
-    $('#adddNewNoteModal').modal('show')
+    $('#adddNewDiaryModal').modal('show')
 })
 
 $('.closeModal').click(function(){
-    $('#adddNewNoteModal').modal('hide')
+    $('#adddNewDiaryModal').modal('hide')
 })
 
 getDiaries();
@@ -67,14 +67,15 @@ function editNote(redordID){
         method: 'GET',
         data: {'recordID': redordID},
         success: function(response) {
+            console.log(response.diary_records)
             $('#record_id').val(response.diary_records[0][0])
-            $('#user_id').val(response.diary_records[0][1])
+            $('#user_email').val(response.diary_records[0][1])
 
             const date = new Date(response.diary_records[0][2]);
             $('#visit_date').val(date.toISOString().slice(0, 16))
 
             $('#submitButton').text('Update note')
-            $('#adddNewNoteModal').modal('show')
+            $('#adddNewDiaryModal').modal('show')
         }
     })
 }

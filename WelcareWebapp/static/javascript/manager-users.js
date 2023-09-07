@@ -59,11 +59,55 @@ function editAccount(userID){
         method: 'GET',
         data: {'userID': userID},
         success: function(response) {
-            console.log(response)
+            console.log(response.user_details[0])
+
+            $('#user_id').val(response.user_details[0][0])
+            $('#first_name').val(response.user_details[0][2])
+            $('#last_name').val(response.user_details[0][3])
+            $('#email').val(response.user_details[0][1])
+            $('#password').val(response.user_details[0][4])
+            $('#role').val(response.user_details[0][5])
+
+            $('#addNewUserModal').modal('show')
             $('#submitButton').text('Update profile')
         }
     })
 }
+
+$('#submitButton').click(function(){
+    if($(this).text() == 'Update profile'){
+        $.ajax({
+            url: '/update_profile',
+            method: 'POST',
+            data: $('#userProfileForm').serialize(),
+            success: function(response) {
+                if(response.message == 'Success'){
+                    getUsersList();
+                }
+                else{
+                    alert(response.message)
+                }
+                $('#addNewUserModal').modal('hide')
+            }
+        })
+    }
+    else{
+        $.ajax({
+            url: '/createProfile',
+            method: 'POST',
+            data: $('#userProfileForm').serialize(),
+            success: function(response) {
+                if(response.message == 'Success'){
+                    getUsersList();
+                }
+                else{
+                    alert(response.message)
+                }
+                $('#addNewUserModal').modal('hide')
+            }
+        })
+    }
+})
 
 function deleteAccount(userID){
     if(confirm("Are you sure you want to delete this account? It will permanently delete all the data for this user.")){
@@ -73,11 +117,11 @@ function deleteAccount(userID){
             data: {'userID': userID},
             success: function(response) {
                 console.log(response)
-                if(response.message == 'User Deleted Successfully'){
+                if(response.message == 'Success'){
                     getUsersList();
                 }
                 else{
-                    alert('An error occured.')
+                    alert(response.message)
                 }
             }
         })

@@ -71,12 +71,13 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <form action="/createProfile" method="post">
+                <form id="userProfileForm">
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6 mb-4">
                                 <div class="input-container">
                                     <input type="text" class="form-control" id="first_name" name="first_name" required>
+                                    <input type="hidden" class="form-control" id="user_id" name="user_id">
                                     <label for="first_name">First name</label>
                                 </div>
                             </div>
@@ -103,7 +104,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-12 mb-4">
-                                <select class="form-control" name="role">
+                                <select class="form-control" name="role" id="role">
                                     <option value="">Select role</option>
                                     <option value="User">User</option>
                                     <option value="Staff">Staff</option>
@@ -114,7 +115,7 @@
                     </div>
                     <div class="modal-footer">
                         <!-- <button type="button" class="btn btn-secondary closeModal" data-dismiss="modal">Close</button> -->
-                        <button type="submit" id="submitButton" class="btn btn-light">Create profile</button>
+                        <button type="button" id="submitButton" class="btn btn-light">Create profile</button>
                     </div>
                 </form>
             </div>

@@ -750,7 +750,8 @@ def create_profile():
                     if existing_user_count > 0:
                         # Email already exists, show an error message and redirect
                         flash("User already exists.", "User already exists.")
-                        return redirect(url_for('manage_users'))
+                        # return redirect(url_for('manage_users'))
+                        return jsonify(message="User already exists.")
 
                     # Insert the user's details into the database
                     cursor.execute(
@@ -771,7 +772,8 @@ def create_profile():
                 db_connection.rollback()
 
         # You can return a response or JSON data here based on your application's requirements
-        return redirect(url_for('manage_users'))
+        return jsonify(message="Success")
+        # return redirect(url_for('manage_users'))
     else:
         return jsonify(message="User not logged in"), 401
 
@@ -861,7 +863,8 @@ def delete_user():
 
                     flash("User deleted successfully!", "User deleted successfully!")
 
-            return redirect(url_for('manage_users'))
+            # return redirect(url_for('manage_users'))
+            return jsonify(message="Success")
 
         except Exception as e:
             # Handle exceptions, log errors, or return appropriate error responses
@@ -1030,15 +1033,16 @@ def update_profile():
 
     except Exception as e:
         print("An error occurred:", e)
+        return jsonify(message="An error occurred.")
 
     finally:
         # Close the database connection when done
         if db_connection.is_connected():
             cursor.close()
-                # db_connection.close()
+            # db_connection.close()
 
-    return redirect(url_for('profile'))
-
+    # return redirect(url_for('profile'))
+    return jsonify(message="Success")
 
 @app.route('/logout')
 def logout():
