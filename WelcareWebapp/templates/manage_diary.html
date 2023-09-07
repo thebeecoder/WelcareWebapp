@@ -58,7 +58,7 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="myModalLabel">Add new note</h5>
+                    <h5 class="modal-title" id="myModalLabel">Add new record</h5>
                     <button type="button" class="btn btn-danger closeModal" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -74,9 +74,13 @@
                             </div>
                             <div class="col-md-12 mb-4">
                                 <div class="input-container">
-                                    <input type="number" class="form-control" id="user_id" name="user_id" required>
-                                    <input type="hidden" class="form-control" id="record_id" name="record_id" required>
-                                    <label for="user_id">User ID</label>
+                                    <select class="form-control" id="email" name="email" required>
+                                        <option value="" >Select an email</option>
+                                        {% for email in user_emails %}
+                                            <option value="{{ email }}">{{ email }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="email"></label>
                                 </div>
                             </div>
                         </div>
