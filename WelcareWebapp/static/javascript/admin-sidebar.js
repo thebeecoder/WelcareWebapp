@@ -34,25 +34,25 @@ $('.sidebar').html(
                 <div class="sidebar-icon">
                     <i class="fas fa-book"></i>
                 </div>
-                Diary
+                Manage Diary
             </a>
             <a href="/manage_notes">
                 <div class="sidebar-icon">
                     <i class="fas fa-sticky-note"></i>
                 </div>
-                Notes
+                Manage Notes
             </a>
             <a href="/manage_media">
                 <div class="sidebar-icon">
                     <i class="fas fa-photo-video"></i>
                 </div>
-                Media
+                Manage Media
             </a>
             <a href="/manage_attendance">
                 <div class="sidebar-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>
-                Attendance
+                Manage Attendance
             </a>
         </div>
         <div class="logout-button">

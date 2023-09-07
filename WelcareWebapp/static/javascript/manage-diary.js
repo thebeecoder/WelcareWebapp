@@ -60,10 +60,9 @@ function getDiaries(){
         }
     })
 }
-
-function editNote(redordID){
+function editNote(email) {
     $.ajax({
-        url: '/getDiaryDetails',
+        url: '/updateDiary',
         method: 'GET',
         data: {'recordID': redordID},
         success: function(response) {
@@ -71,14 +70,16 @@ function editNote(redordID){
             $('#record_id').val(response.diary_records[0][0])
             $('#user_email').val(response.diary_records[0][1])
 
-            const date = new Date(response.diary_records[0][2]);
-            $('#visit_date').val(date.toISOString().slice(0, 16))
+                $('#email').val(diaryRecord.email);
+                $('#visit_date').val(diaryRecord.attended_datetime);
 
-            $('#submitButton').text('Update note')
-            $('#adddNewDiaryModal').modal('show')
+                $('#submitButton').text('Update Diary');
+                $('#addNewDiaryModal').modal('show');
+            }
         }
-    })
+    });
 }
+
 
 function deleteNote(redordID){
     if(confirm("Are you sure you want to delete this diary?")){
@@ -99,10 +100,10 @@ function deleteNote(redordID){
 }
 
 $('#submitButton').click(function(){
-    if($(this).val() == 'Update note'){
+    if($(this).val() == 'Update Diary'){
         $.ajax({
-            url: '/updateDiary',
-            method: 'GET',
+            url: '/updateDiary,
+            method: 'POST',
             data: $('noteForm').serialize(),
             success: function(response) {
                 if(response.message == 'Success'){
@@ -117,7 +118,7 @@ $('#submitButton').click(function(){
     else{
         $.ajax({
             url: '/addNewDiary',
-            method: 'GET',
+            method: 'POST',
             data: $('noteForm').serialize(),
             success: function(response) {
                 if(response.message == 'Success'){

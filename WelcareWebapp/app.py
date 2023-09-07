@@ -884,9 +884,11 @@ def get_diary_records_for_admin():
             # Use get_db_connection to obtain a database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
+                    cursor.execute("SELECT email FROM users")
+                    user_emails = [row[0] for row in cursor.fetchall()]
                     user = fetch_user_info(cursor, user_id)
 
-            return render_template('manage_diary.html', user=user)
+            return render_template('manage_diary.html', user_emails=user_emails, user=user)
 
         except Exception as e:
             print("An error occurred:", e)
@@ -920,26 +922,103 @@ def get_records_for_admin():
     return jsonify(message="User not logged in"), 401
 
 
-@app.route('/getDiaryDetails', methods=['GET'])
-def get_diary_details():
+from flask import request, redirect, flash, url_for
+
+
+@app.route('/addNewDiary', methods=['POST'])
+def add_new_diary_record():
     user_id = session.get('user_id')
-    record_id = request.args.get('recordID')
 
     if user_id:
         try:
-            # Use get_db_connection to obtain a database connection
+            # Get user details from the request
+            email = request.form.get('email')
+            attended_datetime = request.form.get('visit_date')  # Assuming 'visit_date' is the field name for date/time
+
+            # Define and obtain the database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
-                    cursor.execute("SELECT * FROM diary_records WHERE record_id = %s", (record_id,))
-                    diary_records = cursor.fetchall()
+                    # Query the users table to get the user_id based on the provided email
+                    cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
+                    user_row = cursor.fetchone()
 
-            return jsonify(diary_records=diary_records)
+                    if user_row:
+                        user_id_from_email = user_row[0]
+
+                        # Insert the user_id and attended_datetime into the diary_records table
+                        cursor.execute(
+                            "INSERT INTO diary_records (user_id, attended_datetime) VALUES (%s, %s)",
+                            (user_id_from_email, attended_datetime)
+                        )
+
+                        # Commit the transaction
+                        db_connection.commit()
+
+                        flash("Diary Record Added Successfully!", "Diary Record Added Successfully!")
+                    else:
+                        flash("User with the provided email does not exist.", "User not found")
 
         except Exception as e:
+            # Handle exceptions, log errors, or return appropriate error responses
             print("An error occurred:", e)
-            return jsonify(message="An error occurred while fetching diary records"), 500
 
-    return jsonify(message="User not logged in"), 401
+            # Rollback the transaction if an error occurred
+            if db_connection.is_connected():
+                db_connection.rollback()
+
+        # Redirect to the page where you want to display the result
+        return redirect(url_for('manage_diary'))
+    else:
+        return jsonify(message="User not logged in"), 401
+
+
+@app.route('/updateDiary', methods=['POST'])
+def update_diary_entry():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            # Get the updated parameters from the form
+            email = request.form.get('email')
+            attended_datetime = request.form.get('visit_date')
+
+            # Define and obtain the database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    # Query the users table to get the user_id based on the provided email
+                    cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
+                    user_row = cursor.fetchone()
+
+                    if user_row:
+                        user_id_from_email = user_row[0]
+
+                        # Update the attended_datetime for the selected user_id
+                        cursor.execute(
+                            "UPDATE diary_records SET attended_datetime = %s WHERE user_id = %s",
+                            (attended_datetime, user_id_from_email)
+                        )
+
+                        # Commit the transaction
+                        db_connection.commit()
+
+                        flash("Diary Record Updated Successfully!", "Diary Record Updated Successfully")
+                    else:
+                        flash("User with the provided email does not exist.", "User not found")
+
+        except Exception as e:
+            # Handle exceptions, log errors, or return appropriate error responses
+            print("An error occurred:", e)
+
+            # Rollback the transaction if an error occurred
+            if db_connection.is_connected():
+                db_connection.rollback()
+
+            flash("Failed to update diary record. Please try again.", "Error")
+
+        # Redirect to the page where you want to display the result or handle errors
+        return redirect(url_for('manage_diary'))
+    else:
+        return jsonify(message="User not logged in"), 401
 
 
 @app.route('/deleteDiary', methods=['GET'])
