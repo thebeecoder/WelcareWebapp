@@ -772,7 +772,6 @@ def create_profile():
     else:
         return jsonify(message="User not logged in"), 401
 
-
 @app.route('/deleteUser', methods=['GET'])
 def delete_user():
     user_id = session.get('user_id')
@@ -782,13 +781,17 @@ def delete_user():
             # Use get_db_connection to obtain a database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
-                    # Delete the user
-                    cursor.execute("DELETE FROM users WHERE user_id = %s", (request.args.get('userID')))
+                    # Get the user_id to delete
+                    user_id_to_delete = int(request.args.get('userID'))  # Convert to integer
+
+                    cursor.execute("DELETE FROM users WHERE user_id = %s", (user_id_to_delete,))
+
                     # Commit the transaction
                     db_connection.commit()
 
-            # Return a success message
-            return jsonify(message="User deleted successfully")
+                    flash("User deleted successfully!", "User deleted successfully!")
+
+            return redirect(url_for('manage_users'))
 
         except Exception as e:
             # Handle exceptions, log errors, or return appropriate error responses

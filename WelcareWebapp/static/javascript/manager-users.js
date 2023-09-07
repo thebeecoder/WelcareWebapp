@@ -66,14 +66,14 @@ function editAccount(userID){
 }
 
 function deleteAccount(userID){
-    if(confirm("Are you sure you want to delete this account?")){
+    if(confirm("Are you sure you want to delete this account? It will permanently delete all the data for this user.")){
         $.ajax({
             url: '/deleteUser',
             method: 'GET',
             data: {'userID': userID},
             success: function(response) {
                 console.log(response)
-                if(response.message == 'Success'){
+                if(response.message == 'User Deleted Successfully'){
                     getUsersList();
                 }
                 else{
