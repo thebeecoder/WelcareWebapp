@@ -48,8 +48,12 @@ app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
 def get_db_connection():
-    # Get a connection from the pool
-    return connection_pool.get_connection()
+    try:
+        db_connection = connection_pool.get_connection()
+        return db_connection
+    except Exception as e:
+        print("An error occurred while getting a database connection:", e)
+        return None
 
 @app.before_request
 def cleanup():
@@ -719,6 +723,7 @@ def get_users_list():
     else:
         return jsonify(message="User not logged in"), 401
 
+
 @app.route('/createProfile', methods=['POST'])
 def create_profile():
     user_id = session.get('user_id')
@@ -726,20 +731,36 @@ def create_profile():
     if user_id:
         try:
             # Get user details from the request
-            username = request.form.get('username')
             email = request.form.get('email')
+            first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
+            password = request.form.get('password')
+            role = request.form.get('role')
             # Add other user details here as needed
+
+            default_profile_picture = 'default_profile_picture.jpg'
 
             # Define and obtain the database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
+                    # Check if the email already exists in the users table
+                    cursor.execute("SELECT COUNT(*) FROM users WHERE email = %s", (email,))
+                    existing_user_count = cursor.fetchone()[0]
+
+                    if existing_user_count > 0:
+                        # Email already exists, show an error message and redirect
+                        flash("User already exists.", "User already exists.")
+                        return redirect(url_for('manage_users'))
+
                     # Insert the user's details into the database
                     cursor.execute(
-                        "INSERT INTO users (username, email) VALUES (%s, %s)",
-                        (username, email)
+                        "INSERT INTO users (email, first_name, last_name, password, role, profile_picture) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (email, first_name, last_name, password, role, default_profile_picture)
                     )
                     # Commit the transaction
                     db_connection.commit()
+
+                    flash("New User Added Successfully!", "New User Added Successfully!")
 
         except Exception as e:
             # Handle exceptions, log errors, or return appropriate error responses
@@ -750,7 +771,7 @@ def create_profile():
                 db_connection.rollback()
 
         # You can return a response or JSON data here based on your application's requirements
-        return jsonify(message="User profile created successfully")
+        return redirect(url_for('manage_users'))
     else:
         return jsonify(message="User not logged in"), 401
 
