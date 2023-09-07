@@ -277,9 +277,6 @@ def get_diary_records():
     return jsonify(message="User not logged in"), 401
 
 
-from flask import jsonify
-
-
 @app.route('/getrecords', methods=['GET'])
 def get_records():
     user_id = session.get('user_id')
@@ -800,6 +797,95 @@ def delete_user():
 
     else:
         return jsonify(message="User not logged in"), 401
+
+
+@app.route('/manage_diary', methods=['GET'])
+def get_diary_records_for_admin():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    user = fetch_user_info(cursor, user_id)
+
+            return render_template('manage_diary.html', user=user)
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while fetching user information"), 500
+
+    return jsonify(message="User not logged in"), 401
+
+
+@app.route('/getrecordsforadmin', methods=['GET'])
+def get_records_for_admin():
+    user_id = session.get('user_id')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    if user_id:
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT diary_records.record_id, users.first_name, users.last_name, users.email, diary_records.attended_datetime FROM users INNER JOIN diary_records ON users.user_id = diary_records.user_id WHERE attended_datetime >= %s AND attended_datetime <= %s",
+                        (start_date, end_date))
+                    diary_records = cursor.fetchall()
+
+            return jsonify(diary_records=diary_records)
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while fetching diary records"), 500
+
+    return jsonify(message="User not logged in"), 401
+
+
+@app.route('/getDiaryDetails', methods=['GET'])
+def get_diary_details():
+    user_id = session.get('user_id')
+    record_id = request.args.get('recordID')
+
+    if user_id:
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    cursor.execute("SELECT * FROM diary_records WHERE record_id = %s", (record_id,))
+                    diary_records = cursor.fetchall()
+
+            return jsonify(diary_records=diary_records)
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while fetching diary records"), 500
+
+    return jsonify(message="User not logged in"), 401
+
+
+@app.route('/deleteDiary', methods=['GET'])
+def delete_diary():
+    user_id = session.get('user_id')
+    record_id = request.args.get('recordID')
+
+    if user_id:
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    cursor.execute("DELETE FROM diary_records WHERE record_id= %s", (record_id))
+                    cursor.commit()
+
+            return jsonify(message="Success")
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while deleting diary record."), 500
+
+    return jsonify(message="User not logged in"), 401
 
 
 @app.route('/staff_dashboard')

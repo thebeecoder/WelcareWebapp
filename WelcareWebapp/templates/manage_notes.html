@@ -17,14 +17,14 @@
                 <div class="card-body" >
                     <div class="row">
                         <div class="col">
-                            <h3 class="text-uppercase pt-2">Manage Users</h3>
+                            <h3 class="text-uppercase pt-2">Manage Notes</h3>
                         </div>
                         <div class="col-auto">
-                            <!-- <div id="reportrange" class="form-control">
+                            <div id="reportrange" class="form-control">
                                 <i class="fa fa-calendar"></i>&nbsp;
                                 <span></span>&nbsp;&nbsp;<i class="fa fa-caret-down"></i>
-                            </div> -->
-                            <input type="button" class="btn btn-light mt-2" value="Add new user" data-toggle="modal" data-target="#addNewUserModal" id="addNewUser">
+                            </div>
+                            <input type="button" class="btn btn-light mt-2" value="Add new note" data-toggle="modal" data-target="#addNewUserModal" id="addNewNote">
                         </div>
                     </div>
                 </div>
@@ -36,12 +36,10 @@
                         <thead>
                             <tr>
                                 <th>S #</th>
-                                <th>First name</th>
-                                <th>Last name</th>
+                                <th>Title</th>
+                                <th>Description</th>
                                 <th>Email</th>
-                                <th>Password</th>
-                                <th>Role</th>
-                                <th>Profile picture</th>
+                                <th>Uploaded by</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -128,6 +126,6 @@
     </script>
     <script src="../static/javascript/setup.js"></script>
     <script src="../static/javascript/admin-sidebar.js"></script>
-    <script src="../static/javascript/manager-users.js"></script>
+    <script src="../static/javascript/manager-note.js"></script>
 </body>
 </html>
