@@ -10,6 +10,9 @@ import cv2
 import os
 import base64
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
+import uuid
 
 app = Flask(__name__)
 
@@ -771,6 +774,73 @@ def create_profile():
         return redirect(url_for('manage_users'))
     else:
         return jsonify(message="User not logged in"), 401
+
+import  datetime
+@app.route('/editProfile', methods=['POST'])
+def edit_profile():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            # Get user details from the form
+            email = request.form.get('email')
+            first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
+            password = request.form.get('password')
+            role = request.form.get('role')
+            # Add other user details here as needed
+
+            # Handle file upload for the profile picture
+            profile_picture = request.files['profile_picture']
+            if profile_picture:
+                # Generate a unique filename based on current time and random value
+                unique_filename = str(int(datetime.datetime.now().timestamp())) + '_' + str(uuid.uuid4())[:8]
+                # Get the file extension from the original filename
+                file_extension = os.path.splitext(profile_picture.filename)[1]
+                # Combine the unique filename and file extension
+                filename = secure_filename(unique_filename + file_extension)
+                # Save the file to the static folder
+                profile_picture.save(os.path.join('static', 'images', filename))
+                # Set the profile picture filename in the database
+                profile_picture_filename = filename
+            else:
+                # Fetch the user's current profile information from the database
+                with get_db_connection() as db_connection:
+                    with db_connection.cursor() as cursor:
+                        cursor.execute("SELECT profile_picture FROM users WHERE user_id = %s", (user_id,))
+                        result = cursor.fetchone()
+                        if result:
+                            profile_picture_filename = result[0]
+                        else:
+                            # Handle the case where the user does not exist
+                            return jsonify(message="User not found"), 404
+
+            # Define and obtain the database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    # Update the user's details in the database
+                    cursor.execute(
+                        "UPDATE users SET email = %s, first_name = %s, last_name = %s, password = %s, role = %s, profile_picture = %s WHERE user_id = %s",
+                        (email, first_name, last_name, password, role, profile_picture_filename, user_id)
+                    )
+                    # Commit the transaction
+                    db_connection.commit()
+
+                    flash("Profile Updated Successfully!", "Profile Updated Successfully!")
+
+        except Exception as e:
+            # Handle exceptions, log errors, or return appropriate error responses
+            print("An error occurred:", e)
+
+            # Rollback the transaction if an error occurred
+            if db_connection.is_connected():
+                db_connection.rollback()
+
+        # You can return a response or redirect to a profile page after updating
+        return redirect(url_for('manage_users'))
+    else:
+        return jsonify(message="User not logged in"), 401
+
 
 @app.route('/deleteUser', methods=['GET'])
 def delete_user():
