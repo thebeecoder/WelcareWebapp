@@ -4,19 +4,28 @@ $('#reportrange').on('DOMSubtreeModified', function () {
     }
 });
 
-$('#adddNewNote').click(function(){
+$.ajax({
+    url: '/getUsersList',
+    method: 'GET',
+    success: function(response) {
+        response.user_records.forEach(element => {
+            console.log(element)
+            $('#email').append(`<option value="${element[0]}">${element[1]}</option>`)
+        });
+    }
+});
+
+$('#adddNewDiary').click(function(){
     const date = new Date();
     $('#visit_date').val(date.toISOString().slice(0, 16))
 
-    $('#submitButton').text('Add new note')
+    $('#submitButton').text('Add diary')
     $('#adddNewDiaryModal').modal('show')
 })
 
 $('.closeModal').click(function(){
     $('#adddNewDiaryModal').modal('hide')
 })
-
-getDiaries();
 
 function getDiaries(){
     $.ajax({
@@ -60,9 +69,10 @@ function getDiaries(){
         }
     })
 }
-function editNote(email) {
+
+function editNote(redordID) {
     $.ajax({
-        url: '/updateDiary',
+        url: '/getDiaryDetails',
         method: 'GET',
         data: {'recordID': redordID},
         success: function(response) {
@@ -70,23 +80,21 @@ function editNote(email) {
             $('#record_id').val(response.diary_records[0][0])
             $('#user_email').val(response.diary_records[0][1])
 
-                $('#email').val(diaryRecord.email);
-                $('#visit_date').val(diaryRecord.attended_datetime);
+            $('#email').val(response.diary_records[0][1]);
+            $('#visit_date').val(response.diary_records[0][1]);
 
-                $('#submitButton').text('Update Diary');
-                $('#addNewDiaryModal').modal('show');
-            }
+            $('#submitButton').text('Update diary');
+            $('#addNewDiaryModal').modal('show');
         }
     });
 }
 
-
-function deleteNote(redordID){
+function deleteNote(recordID){
     if(confirm("Are you sure you want to delete this diary?")){
         $.ajax({
             url: '/deleteDiary',
             method: 'GET',
-            data: {'redordID': redordID},
+            data: {'recordID': recordID},
             success: function(response) {
                 if(response.message == 'Success'){
                     getDiaries();
@@ -100,11 +108,11 @@ function deleteNote(redordID){
 }
 
 $('#submitButton').click(function(){
-    if($(this).val() == 'Update Diary'){
+    if($(this).text() == 'Update diary'){
         $.ajax({
-            url: '/updateDiary,
+            url: '/updateDiary',
             method: 'POST',
-            data: $('noteForm').serialize(),
+            data: $('#noteForm').serialize(),
             success: function(response) {
                 if(response.message == 'Success'){
                     getDiaries();
@@ -112,6 +120,7 @@ $('#submitButton').click(function(){
                 else{
                     alert('An error occured.')
                 }
+                $('#addNewDiaryModal').modal('hide');
             }
         })
     }
@@ -119,7 +128,7 @@ $('#submitButton').click(function(){
         $.ajax({
             url: '/addNewDiary',
             method: 'POST',
-            data: $('noteForm').serialize(),
+            data: $('#noteForm').serialize(),
             success: function(response) {
                 if(response.message == 'Success'){
                     getDiaries();
@@ -127,6 +136,7 @@ $('#submitButton').click(function(){
                 else{
                     alert('An error occured.')
                 }
+                $('#addNewDiaryModal').modal('hide');
             }
         })
     }

@@ -26,7 +26,7 @@
                             </div>
                         </div>
                         <div class="col-auto">
-                            <input type="button" class="btn btn-light mt-2" value="Add new diary" data-toggle="modal" data-target="#adddNewDiaryModal" id="adddNewNote">
+                            <input type="button" class="btn btn-light mt-2" value="Add new diary" data-toggle="modal" data-target="#adddNewDiaryModal" id="adddNewDiary">
                         </div>
                     </div>
                 </div>
@@ -76,9 +76,6 @@
                                 <div class="input-container">
                                     <select class="form-control" id="email" name="email" required>
                                         <option value="" >Select an email</option>
-                                        {% for email in user_emails %}
-                                            <option value="{{ email }}">{{ email }}</option>
-                                        {% endfor %}
                                     </select>
                                     <label for="email"></label>
                                 </div>
@@ -87,7 +84,7 @@
                     </div>
                     <div class="modal-footer">
                         <!-- <button type="button" class="btn btn-secondary closeModal" data-dismiss="modal">Close</button> -->
-                        <button type="submit" id="submitButton" class="btn btn-light">Create profile</button>
+                        <button type="submit" id="submitButton" class="btn btn-light">Add note</button>
                     </div>
                 </form>
             </div>

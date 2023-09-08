@@ -924,6 +924,26 @@ def get_records_for_admin():
 
 from flask import request, redirect, flash, url_for
 
+@app.route('/getUsersList', methods=['GET'])
+def get_records_for_admin():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    cursor.execute("SELECT * from users;")
+                    users_list = cursor.fetchall()
+
+            return jsonify(users_list=users_list)
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while fetching users list."), 500
+
+    return jsonify(message="User not logged in"), 401
+
 
 @app.route('/addNewDiary', methods=['POST'])
 def add_new_diary_record():
