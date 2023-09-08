@@ -1,3 +1,9 @@
+$('#reportrange').on('DOMSubtreeModified', function () {
+    if ($('#reportrange span').text() != '') {
+        getAllNotes();
+    }
+});
+
 $('#addNewUser').click(function(){
     $('#submitButton').text('Create profile')
     $('#addNewUserModal').modal('show')
@@ -7,15 +13,18 @@ $('.closeModal').click(function(){
     $('#addNewUserModal').modal('hide')
 })
 
-getUsersList();
-
-function getUsersList(){
+function getAllNotes(){
     $.ajax({
-        url: '/getrecordsforadmin',
+        url: '/getNotesForAdmin',
         method: 'GET',
+        data: {
+            start_date: moment($('#reportrange span').text().split(' - ')[0], 'MMMM D, YYYY').format('YYYY-MM-DD'),
+            end_date: moment($('#reportrange span').text().split(' - ')[1], 'MMMM D, YYYY').format('YYYY-MM-DD')
+        },
         success: function(response) {
+            console.log(response)
             $('.record-table tbody').empty()
-            if(response.diary_records.length > 0){
+            if(response.notes.length > 0){
                 var counter = 1;
                 response.user_records.forEach(element => {
                     $('.record-table tbody').append(`
@@ -35,13 +44,13 @@ function getUsersList(){
                     counter ++;
                 });
                 $('.record-table').removeClass('d-none')
-                $('#diary-records-body').html('')
+                $('#manage-notes-body').html('')
             }
             else{
                 $('.record-table').addClass('d-none')
-                $('#diary-records-body').html('<p class="text-muted">No record available.</p>')
+                $('#manage-notes-body').html('<p class="text-muted">No record available.</p>')
             }
-            // $('#diary-records-body').html(response);
+            // $('#manage-notes-body').html(response);
         },
         error: function(xhr, status, error) {
             console.error(error);
@@ -70,7 +79,7 @@ function deleteAccount(userID){
             success: function(response) {
                 console.log(response)
                 if(response.message == 'Success'){
-                    getUsersList();
+                    getAllNotes();
                 }
                 else{
                     alert('An error occured.')

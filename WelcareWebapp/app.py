@@ -1011,6 +1011,62 @@ def delete_diary():
     return jsonify(message="User not logged in"), 401
 
 
+@app.route('/manage_notes', methods=['GET'])
+def manage_notes():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    user = fetch_user_info(cursor, user_id)
+
+            return render_template('manage_notes.html', user=user)
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while fetching user information"), 500
+
+    return jsonify(message="User not logged in"), 401
+
+@app.route('/getNotesForAdmin')
+def get_notes_for_admin():
+    user_id = session.get('user_id')
+
+    if user_id:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    # Fetch notes for the user
+                    cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE note_date BETWEEN %s AND %s", (start_date, end_date))
+                    user_notes = cursor.fetchall()
+
+                    # Convert notes to a list of dictionaries for JSON response
+                    notes_list = []
+                    for note in user_notes:
+                        note_dict = {
+                            'note_date': note[0],
+                            'title': note[1],
+                            'content': note[2],
+                            'note_id': note[3]
+                        }
+                        notes_list.append(note_dict)
+
+                    # Create a JSON response
+                    response = {'notes': notes_list}
+                    return jsonify(response)
+
+        except Exception as e:
+            print("An error occurred:", e)
+
+    return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
+
+
 @app.route('/staff_dashboard')
 def staff_dashboard():
     user_id = session.get('user_id')
