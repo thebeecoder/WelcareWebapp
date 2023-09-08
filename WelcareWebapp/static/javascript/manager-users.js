@@ -15,9 +15,9 @@ function getUsersList(){
         method: 'GET',
         success: function(response) {
             $('.record-table tbody').empty()
-            if(response.user_records.length > 0){
+            if(response.users_list.length > 0){
                 var counter = 1;
-                response.user_records.forEach(element => {
+                response.users_list.forEach(element => {
                     $('.record-table tbody').append(`
                         <tr>
                             <th>${counter}</th>
@@ -59,8 +59,6 @@ function editAccount(userID){
         method: 'GET',
         data: {'userID': userID},
         success: function(response) {
-            console.log(response.user_details[0])
-
             $('#user_id').val(response.user_details[0][0])
             $('#first_name').val(response.user_details[0][2])
             $('#last_name').val(response.user_details[0][3])
@@ -116,7 +114,6 @@ function deleteAccount(userID){
             method: 'GET',
             data: {'userID': userID},
             success: function(response) {
-                console.log(response)
                 if(response.message == 'Success'){
                     getUsersList();
                 }
