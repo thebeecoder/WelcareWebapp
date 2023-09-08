@@ -999,8 +999,8 @@ def delete_diary():
             # Use get_db_connection to obtain a database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
-                    cursor.execute("DELETE FROM diary_records WHERE record_id= %s", (record_id))
-                    cursor.commit()
+                    cursor.execute("DELETE FROM diary_records WHERE record_id= %s", (record_id,))
+                    db_connection.commit()
 
             return jsonify(message="Success")
 
