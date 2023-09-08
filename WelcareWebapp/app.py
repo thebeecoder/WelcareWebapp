@@ -702,28 +702,6 @@ def get_user_details():
         return jsonify(message="User not logged in"), 401
 
 
-@app.route('/getUsersList', methods=['GET'])
-def get_users_list():
-    user_id = session.get('user_id')
-
-    if user_id:
-        try:
-            # Use get_db_connection to obtain a database connection
-            with get_db_connection() as db_connection:
-                with db_connection.cursor() as cursor:
-                    cursor.execute("SELECT * FROM users")
-                    user_records = cursor.fetchall()
-
-            return jsonify(user_records=user_records)
-
-        except Exception as e:
-            print("An error occurred:", e)
-            return jsonify(message="An error occurred while fetching user records"), 500
-
-    else:
-        return jsonify(message="User not logged in"), 401
-
-
 @app.route('/createProfile', methods=['POST'])
 def create_profile():
     user_id = session.get('user_id')
@@ -909,7 +887,7 @@ def get_records_for_admin():
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
                     cursor.execute(
-                        "SELECT diary_records.record_id, users.first_name, users.last_name, users.email, diary_records.attended_datetime FROM users INNER JOIN diary_records ON users.user_id = diary_records.user_id WHERE attended_datetime >= %s AND attended_datetime <= %s",
+                        "SELECT diary_records.record_id, users.first_name, users.last_name, users.email, diary_records.attended_datetime, users.user_id FROM users INNER JOIN diary_records ON users.user_id = diary_records.user_id WHERE attended_datetime >= %s AND attended_datetime <= %s",
                         (start_date, end_date))
                     diary_records = cursor.fetchall()
 
@@ -922,10 +900,8 @@ def get_records_for_admin():
     return jsonify(message="User not logged in"), 401
 
 
-from flask import request, redirect, flash, url_for
-
 @app.route('/getUsersList', methods=['GET'])
-def get_records_for_admin():
+def get_users_list():
     user_id = session.get('user_id')
 
     if user_id:
@@ -952,42 +928,26 @@ def add_new_diary_record():
     if user_id:
         try:
             # Get user details from the request
-            email = request.form.get('email')
-            attended_datetime = request.form.get('visit_date')  # Assuming 'visit_date' is the field name for date/time
+            user_id = request.form.get('user_id')
+            attended_datetime = request.form.get('visit_date')
 
             # Define and obtain the database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
-                    # Query the users table to get the user_id based on the provided email
-                    cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
-                    user_row = cursor.fetchone()
-
-                    if user_row:
-                        user_id_from_email = user_row[0]
-
-                        # Insert the user_id and attended_datetime into the diary_records table
-                        cursor.execute(
-                            "INSERT INTO diary_records (user_id, attended_datetime) VALUES (%s, %s)",
-                            (user_id_from_email, attended_datetime)
-                        )
-
-                        # Commit the transaction
-                        db_connection.commit()
-
-                        flash("Diary Record Added Successfully!", "Diary Record Added Successfully!")
-                    else:
-                        flash("User with the provided email does not exist.", "User not found")
+                   cursor.execute(
+                       "INSERT INTO diary_records (user_id, attended_datetime) VALUES (%s, %s)",
+                        (user_id, attended_datetime))
+                   
+                db_connection.commit()
 
         except Exception as e:
             # Handle exceptions, log errors, or return appropriate error responses
             print("An error occurred:", e)
-
             # Rollback the transaction if an error occurred
             if db_connection.is_connected():
                 db_connection.rollback()
 
-        # Redirect to the page where you want to display the result
-        return redirect(url_for('manage_diary'))
+        return jsonify(message="Success")
     else:
         return jsonify(message="User not logged in"), 401
 
@@ -999,31 +959,19 @@ def update_diary_entry():
     if user_id:
         try:
             # Get the updated parameters from the form
-            email = request.form.get('email')
+            user_id = request.form.get('user_id')
+            record_id = request.form.get('record_id')
             attended_datetime = request.form.get('visit_date')
 
             # Define and obtain the database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
-                    # Query the users table to get the user_id based on the provided email
-                    cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
-                    user_row = cursor.fetchone()
-
-                    if user_row:
-                        user_id_from_email = user_row[0]
-
-                        # Update the attended_datetime for the selected user_id
-                        cursor.execute(
-                            "UPDATE diary_records SET attended_datetime = %s WHERE user_id = %s",
-                            (attended_datetime, user_id_from_email)
-                        )
-
-                        # Commit the transaction
-                        db_connection.commit()
-
-                        flash("Diary Record Updated Successfully!", "Diary Record Updated Successfully")
-                    else:
-                        flash("User with the provided email does not exist.", "User not found")
+                    cursor.execute(
+                        "UPDATE diary_records SET attended_datetime = %s, user_id = %s WHERE record_id = %s",
+                        (attended_datetime, user_id, record_id)
+                    )
+                    db_connection.commit()
+                    flash("Diary Record Updated Successfully!", "Diary Record Updated Successfully")
 
         except Exception as e:
             # Handle exceptions, log errors, or return appropriate error responses
@@ -1036,7 +984,7 @@ def update_diary_entry():
             flash("Failed to update diary record. Please try again.", "Error")
 
         # Redirect to the page where you want to display the result or handle errors
-        return redirect(url_for('manage_diary'))
+        return jsonify(message="Success")
     else:
         return jsonify(message="User not logged in"), 401
 

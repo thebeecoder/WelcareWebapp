@@ -26,7 +26,7 @@
                             </div>
                         </div>
                         <div class="col-auto">
-                            <input type="button" class="btn btn-light mt-2" value="Add new diary" data-toggle="modal" data-target="#adddNewDiaryModal" id="adddNewDiary">
+                            <input type="button" class="btn btn-light mt-2" value="Add new diary" data-toggle="modal" data-target="#addNewDiaryModal" id="addNewDiary">
                         </div>
                     </div>
                 </div>
@@ -54,7 +54,7 @@
     </div>
 
     <!-- The Modal -->
-    <div class="modal fade" id="adddNewDiaryModal" tabindex="-1" role="dialog" aria-labelledby="adddNewDiaryModal" aria-hidden="true">
+    <div class="modal fade" id="addNewDiaryModal" tabindex="-1" role="dialog" aria-labelledby="addNewDiaryModal" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -69,22 +69,23 @@
                             <div class="col-md-12 mb-4">
                                 <div class="input-container">
                                     <input type="datetime-local" class="form-control" id="visit_date" name="visit_date" required>
+                                    <input type="hidden" class="form-control" id="record_id" name="record_id">
                                     <label for="visit_date">Visit date</label>
                                 </div>
                             </div>
                             <div class="col-md-12 mb-4">
                                 <div class="input-container">
-                                    <select class="form-control" id="email" name="email" required>
+                                    <select class="form-control" id="user_id" name="user_id" required>
                                         <option value="" >Select an email</option>
                                     </select>
-                                    <label for="email"></label>
+                                    <label for="user_id"></label>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <!-- <button type="button" class="btn btn-secondary closeModal" data-dismiss="modal">Close</button> -->
-                        <button type="submit" id="submitButton" class="btn btn-light">Add note</button>
+                        <button type="button" id="submitButton" class="btn btn-light">Add note</button>
                     </div>
                 </form>
             </div>

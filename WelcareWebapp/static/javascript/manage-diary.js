@@ -8,25 +8,25 @@ $.ajax({
     url: '/getUsersList',
     method: 'GET',
     success: function(response) {
-        response.user_records.forEach(element => {
-            console.log(element)
-            $('#email').append(`<option value="${element[0]}">${element[1]}</option>`)
+        response.users_list.forEach(element => {
+            $('#user_id').append(`<option value="${element[0]}">${element[1]}</option>`)
         });
     }
 });
 
-$('#adddNewDiary').click(function(){
+$('#addNewDiary').click(function(){
     const date = new Date();
     $('#visit_date').val(date.toISOString().slice(0, 16))
 
     $('#submitButton').text('Add diary')
-    $('#adddNewDiaryModal').modal('show')
+    $('#addNewDiaryModal').modal('show')
 })
 
 $('.closeModal').click(function(){
-    $('#adddNewDiaryModal').modal('hide')
+    $('#addNewDiaryModal').modal('hide')
 })
 
+var allDiaries = '';
 function getDiaries(){
     $.ajax({
         url: '/getrecordsforadmin',
@@ -39,6 +39,7 @@ function getDiaries(){
             $('.record-table tbody').empty()
             if(response.diary_records.length > 0){
                 var counter = 1;
+                allDiaries = response.diary_records;
                 response.diary_records.forEach(element => {
                     $('.record-table tbody').append(`
                         <tr>
@@ -71,22 +72,17 @@ function getDiaries(){
 }
 
 function editNote(redordID) {
-    $.ajax({
-        url: '/getDiaryDetails',
-        method: 'GET',
-        data: {'recordID': redordID},
-        success: function(response) {
-            console.log(response.diary_records)
-            $('#record_id').val(response.diary_records[0][0])
-            $('#user_email').val(response.diary_records[0][1])
-
-            $('#email').val(response.diary_records[0][1]);
-            $('#visit_date').val(response.diary_records[0][1]);
-
-            $('#submitButton').text('Update diary');
-            $('#addNewDiaryModal').modal('show');
-        }
+    var result = allDiaries.find(function (item) {
+        return item[0] == redordID;
     });
+
+    $('#record_id').val(result[0]);
+    $('#user_id').val(result[5]);
+    var parsedDate = new Date(result[4]);
+    $('#visit_date').val(parsedDate.toISOString().slice(0, 16));
+
+    $('#submitButton').text('Update diary');
+    $('#addNewDiaryModal').modal('show');
 }
 
 function deleteNote(recordID){
@@ -141,3 +137,7 @@ $('#submitButton').click(function(){
         })
     }
 })
+
+$('.closeModal').click(function(){
+    $('#addNewDiaryModal').modal('hide');
+});
