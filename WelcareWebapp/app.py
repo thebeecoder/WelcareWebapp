@@ -1067,6 +1067,67 @@ def get_notes_for_admin():
     return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
 
 
+@app.route('/updateNotes', methods=['POST'])
+def update_notes_entry():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            # Get the updated parameters from the form
+            user_id = request.form.get('user_id')
+            note_id = request.form.get('note_id')
+            note_date = request.form.get('note_date')
+            title = request.form.get('title')
+            content = request.form.get('content')
+
+            # Define and obtain the database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    cursor.execute(
+                        "UPDATE notes SET Title = %s, note_date = %s, content = %s, user_id = %s WHERE note_id = %s",
+                        (title, note_date, content, user_id, note_id)
+                    )
+                    db_connection.commit()
+                    flash("Note Updated Successfully!", "Note Updated Successfully")
+
+        except Exception as e:
+            # Handle exceptions, log errors, or return appropriate error responses
+            print("An error occurred:", e)
+
+            # Rollback the transaction if an error occurred
+            if db_connection.is_connected():
+                db_connection.rollback()
+
+            flash("Failed to update Note. Please try again.", "Error")
+
+        # Redirect to the page where you want to display the result or handle errors
+        return jsonify(message="Success")
+    else:
+        return jsonify(message="User not logged in"), 401
+
+
+@app.route('/deleteNotes', methods=['GET'])
+def delete_notes():
+    user_id = session.get('user_id')
+    note_id = request.args.get('note_id')
+
+    if user_id:
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    cursor.execute("DELETE FROM notes WHERE note_id= %s", (note_id,))
+                    db_connection.commit()
+
+            return jsonify(message="Success")
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while deleting note."), 500
+
+    return jsonify(message="User not logged in"), 401
+
+
 @app.route('/staff_dashboard')
 def staff_dashboard():
     user_id = session.get('user_id')
