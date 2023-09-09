@@ -1043,7 +1043,7 @@ def get_notes_for_admin():
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
                     # Fetch notes for the user
-                    cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE note_date BETWEEN %s AND %s", (start_date, end_date))
+                    cursor.execute("SELECT note_date, Title, content, note_id FROM notes WHERE note_date >= %s AND note_date <= %s", (start_date, end_date))
                     user_notes = cursor.fetchall()
 
                     # Convert notes to a list of dictionaries for JSON response

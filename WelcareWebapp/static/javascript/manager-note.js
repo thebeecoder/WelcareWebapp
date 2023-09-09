@@ -13,7 +13,7 @@ $('.closeModal').click(function(){
     $('#addNewUserModal').modal('hide')
 })
 
-function getAllNotes(){
+function getAllNotes() {
     $.ajax({
         url: '/getNotesForAdmin',
         method: 'GET',
@@ -21,42 +21,44 @@ function getAllNotes(){
             start_date: moment($('#reportrange span').text().split(' - ')[0], 'MMMM D, YYYY').format('YYYY-MM-DD'),
             end_date: moment($('#reportrange span').text().split(' - ')[1], 'MMMM D, YYYY').format('YYYY-MM-DD')
         },
-        success: function(response) {
-            console.log(response)
-            $('.record-table tbody').empty()
-            if(response.notes.length > 0){
+        success: function (response) {
+            console.log(response);
+            $('.record-table tbody').empty();
+
+            if (response.notes.length > 0) {
                 var counter = 1;
-                response.user_records.forEach(element => {
+
+                response.notes.forEach(note => {
                     $('.record-table tbody').append(`
                         <tr>
                             <th>${counter}</th>
-                            <td>${element[2]}</td>
-                            <td>${element[3]}</td>
-                            <td>${element[1]}</td>
-                            <td>${element[4]}</td>
+                            <td>${note.title}</td>
+                            <td>${note.content}</td>
+                            <td>${note.note_date}</td>
+                            <td>${note.note_id}</td>
                             <td>
-                                <span class="text-primary" style="cursor: pointer;" onclick="editAccount(${element[0]})"><i class="fas fa-edit"></i></span>
-                                &nbsp; 
-                                <span class="text-danger" style="cursor: pointer;" onclick="deleteAccount(${element[0]})"><i class="fas fa-trash"></i></span>
+                                <span class="text-primary" style="cursor: pointer;" onclick="editAccount(${note.note_id})"><i class="fas fa-edit"></i></span>
+                                &nbsp;
+                                <span class="text-danger" style="cursor: pointer;" onclick="deleteAccount(${note.note_id})"><i class="fas fa-trash"></i></span>
                             </td>
                         </tr>
-                    `)
-                    counter ++;
+                    `);
+                    counter++;
                 });
-                $('.record-table').removeClass('d-none')
-                $('#manage-notes-body').html('')
+
+                $('.record-table').removeClass('d-none');
+                $('#manage-notes-body').html('');
+            } else {
+                $('.record-table').addClass('d-none');
+                $('#manage-notes-body').html('<p class="text-muted">No record available.</p>');
             }
-            else{
-                $('.record-table').addClass('d-none')
-                $('#manage-notes-body').html('<p class="text-muted">No record available.</p>')
-            }
-            // $('#manage-notes-body').html(response);
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error(error);
         }
-    })
+    });
 }
+
 
 function editAccount(userID){
     $.ajax({

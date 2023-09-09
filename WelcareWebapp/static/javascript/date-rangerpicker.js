@@ -11,7 +11,7 @@ $(function() {
         startDate: start,
         endDate: end,
         ranges: {
-            'Today': [moment(), moment()],
+            'Today': [moment().startOf('day'), moment().endOf('day')],
             'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
             'Last 7 Days': [moment().subtract(6, 'days'), moment()]
         },
