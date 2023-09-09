@@ -1128,6 +1128,50 @@ def delete_notes():
     return jsonify(message="User not logged in"), 401
 
 
+@app.route('/manage_attendance', methods=['GET'])
+def manage_attendance():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    user = fetch_user_info(cursor, user_id)
+
+            return render_template('manage_attendance.html', user=user)
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while fetching user information"), 500
+
+    return jsonify(message="User not logged in"), 401
+
+@app.route('/getAttendanceForAdmin')
+def get_attendance_for_admin():
+    user_id = session.get('user_id')
+
+    if user_id:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        try:
+            # Use get_db_connection to obtain a database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    # Fetch notes for the user
+                    cursor.execute("SELECT welcare_attendance.attendance_id, users.first_name, users.last_name, users.email, welcare_attendance.attendance_datetime, welcare_attendance.videotitle, welcare_attendance.media_path, users.user_id FROM users INNER JOIN welcare_attendance ON users.user_id = welcare_attendance.user_id WHERE welcare_attendance.attendance_datetime >= %s AND welcare_attendance.attendance_datetime <= %s", (start_date, end_date))
+                    welcare_attendance = cursor.fetchall()
+
+            return jsonify(welcare_attendance=welcare_attendance)
+
+
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred while fetching diary records"), 500
+
+    return jsonify(message="User not logged in"), 401
+
 @app.route('/staff_dashboard')
 def staff_dashboard():
     user_id = session.get('user_id')

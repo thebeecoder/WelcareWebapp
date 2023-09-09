@@ -26,15 +26,35 @@
                                 <i class="fa fa-calendar"></i>&nbsp;
                                 <span></span>&nbsp;&nbsp;<i class="fa fa-caret-down"></i>
                             </div>
+                            <input type="button" class="btn btn-light mt-2" value="Add new record" data-toggle="modal" data-target="#addNewAttendanceModal" id="addNewAttendance">
                         </div>
                     </div>
                 </div>
             </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="alert alert-{{ messages[0][1] }}">
+                  {{ messages[0][0] }}
+                </div>
+              {% endif %}
+            {% endwith %}
             <div class="card">
                 <div class="card-body">
-                    <div class="gallery">
-                        <!-- Check if there are records or not -->
-                        <div id="attendance-records-body" class="text-muted"></div>
+                    <table class="table table-striped record-table d-none">
+                        <thead>
+                            <tr>
+                                <th>S #</th>
+                                <th>Name</th>
+                                <th>Email address</th>
+                                <th>Date Time</th>
+                                <th>Title</th>
+                                <th>Video</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div id="attendance-records-body" class="text-center"></div>
+
                     <div class="popup">
                         <div class="popup-content">
                             <video controls id="video-player"></video>
@@ -45,6 +65,54 @@
         </div>
     </div>
 
+    <!-- The Modal -->
+    <div class="modal fade" id="addNewAttendanceModal" tabindex="-1" role="dialog" aria-labelledby="addNewAttendanceModal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="myModalLabel">Add New Record</h5>
+                    <button type="button" class="btn btn-danger closeModal" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="AttendanceForm">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="input-container">
+                                    <input type="datetime-local" class="form-control" id="visit_date" name="visit_date" required>
+                                    <input type="hidden" class="form-control" id="record_id" name="record_id">
+                                    <label for="visit_date">Visit date</label>
+                                </div>
+
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="input-container">
+                                    <input type="text" class="form-control" id="videotitle" name="videotitle" required>
+                                    <input type="hidden" class="form-control" id="user_id" name="user_id">
+                                    <label for="videotitle">Video Title</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- <button type="button" class="btn btn-secondary closeModal" data-dismiss="modal">Close</button> -->
+                        <button type="button" id="submitButton" class="btn btn-light">Create profile</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script type="text/javascript" src="https://cdn.rawgit.com/dimsemenov/Magnific-Popup/master/dist/jquery.magnific-popup.js"></script>
+    <script src="../static/javascript/date-rangerpicker.js"></script>
     <script>
         var userData = {
             first_name: "{{ user.first_name }}",
@@ -53,16 +121,8 @@
         };
 
     </script>
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <script type="text/javascript" src="https://cdn.rawgit.com/dimsemenov/Magnific-Popup/master/dist/jquery.magnific-popup.js"></script>
-    <script src="../static/javascript/date-rangerpicker.js"></script>
-
     <script src="../static/javascript/setup.js"></script>
-    <script src="../static/javascript/user-sidebar.js"></script>
-    <script src="../static/javascript/attendance.js"></script>
+    <script src="../static/javascript/admin-sidebar.js"></script>
+    <script src="../static/javascript/manage-attendance.js"></script>
 </body>
 </html>
