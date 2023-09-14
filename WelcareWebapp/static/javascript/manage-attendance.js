@@ -58,6 +58,11 @@ function getAttendance(){
                                     Your browser does not support the video tag.
                                 </video>
                             </td>
+                            <td>
+                                <span class="text-primary" style="cursor: pointer;" onclick="editNote(${element[0]})"><i class="fas fa-edit"></i></span>
+                                &nbsp;
+                                <span class="text-danger" style="cursor: pointer;" onclick="deleteNote(${element[0]})"><i class="fas fa-trash"></i></span>
+                            </td>
                         </tr>
                     `);
                     counter++;
