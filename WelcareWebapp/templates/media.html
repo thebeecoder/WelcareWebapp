@@ -47,13 +47,16 @@
                             </div>
                         </div>
                     </div>
-                    <form method="POST" class="text-center" enctype="multipart/form-data" action="{{ url_for('view_media') }}">
+                    <form method="POST" class="text-center" enctype="multipart/form-data" action="{{ url_for('insert_media') }}">
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input d-none" id="file-input" multiple accept="image/*, video/*" required>
-                            <label class="custom-file-label btn btn-light" for="" id="selectMediaBtn"><i class="fas fa-photo-video"></i> &nbsp; Select media files</label>
+                            <input type="file" class="custom-file-input d-none" id="file-input" name="file" multiple accept="image/*, video/*" required>
+                            <label class="custom-file-label btn btn-light" for="file-input" id="selectMediaBtn">
+                                <i class="fas fa-photo-video"></i> &nbsp; Select media files
+                            </label>
                         </div>
                         <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-upload"></i> &nbsp; Save</button>
                     </form>
+                    
                 </div>
             </div>
         </div>
@@ -81,17 +84,65 @@
                     </div>
                 </div>
                 <div class="text-center">
-                            <video id="cameraPreview" autoplay playsinline style="display: none;"></video>
+                    <video id="cameraPreview" style="display: none;" autoplay playsinline></video>
+                    <button id="capturePhotoBtn" style="display: none;" >Capture Photo</button>
+                    <img id="capturedPhoto" style="display: none;"  alt="">
+                    <button id="startRecordingBtn" style="display: none;" >Start Recording</button>
+                    <button id="stopRecordingBtn" style="display: none;"  >Stop Recording</button>
+                    <video id="recordedVideo" style="display: none;" controls></video>
+                    <script src="..\static\javascript\camera-access.js"></script>
                 </div>
                 </div>
             </div>
         </div>
     </div>
     <script>
+   document.addEventListener('DOMContentLoaded', function () {
+    const cameraPreview = document.getElementById('cameraPreview');
+    const capturePhotoBtn = document.getElementById('capturePhotoBtn');
+    const capturedPhoto = document.getElementById('capturedPhoto');
+
+    // Function to start the webcam preview
+    function startCameraPreview() {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                // Display the webcam video stream in the video element
+                cameraPreview.srcObject = stream;
+            })
+            .catch(function (error) {
+                console.error('Error accessing the camera: ', error);
+            });
+    }
+
+    // Add click event listener to capture photo button
+    capturePhotoBtn.addEventListener('click', function () {
+        // Get the video element and canvas element
+        const videoElement = document.getElementById('cameraPreview');
+        const canvasElement = document.createElement('canvas');
+        const context = canvasElement.getContext('2d');
+
+        // Set the canvas dimensions to match the video dimensions
+        canvasElement.width = videoElement.videoWidth;
+        canvasElement.height = videoElement.videoHeight;
+
+        // Draw a frame from the video onto the canvas
+        context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+        // Convert canvas content to a data URL (base64 encoded image)
+        const photoDataURL = canvasElement.toDataURL('image/jpeg');
+
+        // Display the captured photo
+        capturedPhoto.src = photoDataURL;
+    });
+
+    // Start the webcam preview when the page loads
+    startCameraPreview();
+});
+
         var userData = {
             first_name: "{{ user.first_name }}",
             last_name: "{{ user.last_name }}",
-            profile_picture: "{{ url_for('static', filename='images/' + user.profile_picture) }}"
+            profile_picture: "{{ url_for('static', filename=user.profile_picture) }}"
         };
     </script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
