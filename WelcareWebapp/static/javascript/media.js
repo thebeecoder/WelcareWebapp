@@ -60,6 +60,7 @@ $(document).ready(function () {
     });
 
     $('#uploadFromDeviceBtn').click(function () {
+        document.getElementById('cameraPreview').style.display='none';
         $('#file-input').click();
     });
 
@@ -133,7 +134,6 @@ $('#reportrange').on('DOMSubtreeModified', function () {
 });
 
 // Call the populateMediaPreviews function with the media data from the response
-populateMediaPreviews(response.media);
 
 
 function updateMediaRecords() {
