@@ -86,7 +86,6 @@ def fetch_user_info(cursor, user_id):
         print("An error occurred while fetching user info:", e)
         return None
 
-
 @app.route('/', methods=['GET', 'POST'])
 def role_select():
     return render_template('role_select.html')
@@ -385,8 +384,8 @@ def view_media():
         return redirect(url_for('login'))
 
 
-@app.route('/getmedia', methods=['GET'])
-def get_media():
+@app.route('/getmediaforadmin', methods=['GET'])
+def get_mediaAdmin():
     user_id = session.get('user_id')
 
     if user_id:
