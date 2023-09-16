@@ -201,12 +201,12 @@ def profile():
     user_id = session['user_id']
 
     user = {
-        'username': 'User',
         'first_name': '',
         'last_name': '',
         'profile_picture': 'default_profile_picture.png',
         'email': '',
         'password': '',
+        'role': '',
         'user_id': user_id
     }
 
@@ -214,24 +214,24 @@ def profile():
         # Use get_db_connection to obtain a database connection
         with get_db_connection() as db_connection:
             cursor = db_connection.cursor()
+            user = fetch_user_info(cursor, user_id)
             cursor.execute(
-                "SELECT username, first_name, last_name, profile_picture, email, password FROM users WHERE user_id = %s",
+                "SELECT first_name, last_name, profile_picture, email, role, password FROM users WHERE user_id = %s",
                 (user_id,))
             user_info = cursor.fetchone()
 
             if user_info:
                 user = {
-                    'username': user_info[0],
-                    'first_name': user_info[1],
-                    'last_name': user_info[2],
-                    'profile_picture': user_info[3],
-                    'email': user_info[4],
+                    'first_name': user_info[0],
+                    'last_name': user_info[1],
+                    'profile_picture': user_info[2],
+                    'email': user_info[3],
+                    'role': user_info[4],
                     'password': user_info[5],
                     'user_id': user_id
                 }
 
             if request.method == 'POST':
-                new_profile_picture = request.form['profile_picture']
                 new_email = request.form['email']
                 new_first_name = request.form['first_name']
                 new_last_name = request.form['last_name']
@@ -244,19 +244,71 @@ def profile():
                 )
                 db_connection.commit()
 
-                if new_profile_picture:
-                    # Update profile picture in the database
-                    cursor.execute(
-                        "UPDATE users SET profile_picture=%s WHERE user_id=%s",
-                        (new_profile_picture, user_id)
-                    )
-                    db_connection.commit()
-                    user['profile_picture'] = new_profile_picture
+                flash("Profile Updated Successfully!", "success")
 
     except Exception as e:
         print("An error occurred:", e)
+        flash("An error occurred while updating the profile.", "error")
 
     return render_template('profile.html', user=user)
+
+@app.route('/editUserProfile', methods=['POST'])
+def edit_user_profile():
+    user_id = session.get('user_id')
+
+    if user_id:
+        try:
+            # Get user details from the form
+            email = request.form.get('email')
+            first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
+            password = request.form.get('password')
+            role = request.form.get('role')
+
+            # Handle file upload for the profile picture
+            profile_picture = request.files['profile_picture']
+            if profile_picture:
+                # Save the file to the static/images folder with its original filename
+                profile_picture.save(os.path.join('static/images', secure_filename(profile_picture.filename)))
+                # Set the profile picture filename in the database
+                profile_picture_filename = secure_filename(profile_picture.filename)
+            else:
+                # Fetch the user's current profile information from the database
+                with get_db_connection() as db_connection:
+                    with db_connection.cursor() as cursor:
+                        cursor.execute("SELECT profile_picture FROM users WHERE user_id = %s", (user_id,))
+                        result = cursor.fetchone()
+                        if result:
+                            profile_picture_filename = result[0]
+                        else:
+                            # Handle the case where the user does not exist
+                            return jsonify(message="User not found"), 404
+
+            # Define and obtain the database connection
+            with get_db_connection() as db_connection:
+                with db_connection.cursor() as cursor:
+                    # Update the user's details in the database
+                    cursor.execute(
+                        "UPDATE users SET email = %s, first_name = %s, last_name = %s, password = %s, role = %s, profile_picture = %s WHERE user_id = %s",
+                        (email, first_name, last_name, password, role, profile_picture_filename, user_id)
+                    )
+                    # Commit the transaction
+                    db_connection.commit()
+
+                    flash("Profile Updated Successfully!", "Profile Updated Successfully!")
+
+        except Exception as e:
+            # Handle exceptions, log errors, or return appropriate error responses
+            print("An error occurred:", e)
+
+            # Rollback the transaction if an error occurred
+            if db_connection.is_connected():
+                db_connection.rollback()
+
+        # You can return a response or redirect to a profile page after updating
+        return redirect(url_for('profile'))
+    else:
+        return jsonify(message="User not logged in"), 401
 
 
 @app.route('/diary', methods=['GET'])
@@ -1350,62 +1402,6 @@ def staff_dashboard():
         print("An error occurred:", e)
         return "An error occurred while processing your request", 500
 
-
-@app.route('/update_profile', methods=['POST'])
-def update_profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    user_id = session['user_id']
-
-    new_email = request.form['email']
-    new_first_name = request.form['first_name']
-    new_last_name = request.form['last_name']
-    new_password = request.form['password']
-
-    # Check if a new profile picture was uploaded
-    if 'profile_picture' in request.files:
-        profile_picture = request.files['profile_picture']
-        if profile_picture.filename != '':
-            # Generate a unique filename for the uploaded picture
-            filename = secure_filename(profile_picture.filename)
-            new_picture_filename = f"user_{user_id}_{filename}"
-
-            # Save the uploaded picture to the static folder
-            new_picture_path = os.path.join(app.static_folder, new_picture_filename)
-            profile_picture.save(new_picture_path)
-
-            # Update the profile_picture value in the database
-            with connection_pool.get_connection() as db_connection:
-                # Use the db_connection for your database operations
-                cursor = db_connection.cursor()
-                cursor.execute(
-                    "UPDATE users SET profile_picture=%s WHERE user_id=%s",
-                    (new_picture_filename, user_id)
-                )
-                db_connection.commit()
-
-    try:
-        # Update the user's profile information in the database
-        with db_connection.cursor() as cursor:
-            cursor.execute(
-                "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s WHERE user_id=%s",
-                (new_email, new_password, new_first_name, new_last_name, user_id)
-            )
-            db_connection.commit()
-
-    except Exception as e:
-        print("An error occurred:", e)
-        return jsonify(message="An error occurred.")
-
-    finally:
-        # Close the database connection when done
-        if db_connection.is_connected():
-            cursor.close()
-            # db_connection.close()
-
-    # return redirect(url_for('profile'))
-    return jsonify(message="Success")
 
 @app.route('/logout')
 def logout():

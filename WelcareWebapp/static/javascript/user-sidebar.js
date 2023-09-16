@@ -4,15 +4,15 @@ $('.sidebar').html(
         <img src="../static/walcarelogo.png" alt="Logo" class="logo-img">
     </div>
 
-    <a href="/profile.html">
-        <img class="user-image" src="../static/images/blank-profile.jpg" draggable="false" alt="User Profile">
-        <!--<img class="user-image" src="../static/${userData.profile_picture}" alt="User Profile">-->
+    <a href="/profile">
+        <!--<img class="user-image" src="../static/images/blank-profile.jpg" draggable="false" alt="User Profile">-->
+        <img class="user-image" src="${userData.profile_picture}" alt="User Profile">
     </a>
     <div class="user-name text-center">
         ${userData.first_name} ${userData.last_name}
     </div>
     <div class="mt-3 text-center">
-        <a class="profile-status" href="/profile.html">Edit</a>
+        <a class="profile-status" href="/profile">Edit</a>
     </div>
 
     <div class="modules-container">
