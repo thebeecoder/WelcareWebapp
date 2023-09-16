@@ -252,6 +252,7 @@ def profile():
 
     return render_template('profile.html', user=user)
 
+
 @app.route('/editUserProfile', methods=['POST'])
 def edit_user_profile():
     user_id = session.get('user_id')
