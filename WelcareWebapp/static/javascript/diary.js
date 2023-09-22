@@ -13,10 +13,12 @@ function updateDiaryRecords() {
             end_date: moment($('#reportrange span').text().split(' - ')[1], 'MMMM D, YYYY').format('YYYY-MM-DD')
         },
         success: function(response) {
+        console.log('Response from /getrecords:', response);
             $('.record-table tbody').empty()
             if(response.diary_records.length > 0){
                 var counter = 1;
                 response.diary_records.forEach(element => {
+                console.log('Diary Record:', element);
                     $('.record-table tbody').append(`
                         <tr>
                             <td>${counter}</td>

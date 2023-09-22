@@ -24,7 +24,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mov'}
+    ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'mp4', 'avi', 'mov', 'webm'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
@@ -37,9 +37,9 @@ def allowed_file(filename):
 # )
 
 db_config = {
-    "host": "srv743.hstgr.io",
-    "user": "u159785945_welcare",
-    "password": "newpasswordforwelcare@H1",
+    "host": "localhost",
+    "user": "root",
+    "password": "",
     "database": "u159785945_welcarewebapp",
     "pool_name": "my_pool",
     "pool_size": 32,
@@ -340,7 +340,7 @@ def get_diary_records():
 
 @app.route('/getrecords', methods=['GET'])
 def get_records():
-    user_id = session.get('user_id``')
+    user_id = session.get('user_id')
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
@@ -512,6 +512,7 @@ def manage_media():
     else:
         return redirect(url_for('login'))  # Redirect to login if user ID not found in session
 
+import traceback  # Import the traceback module for better error logging
 
 @app.route('/getmedia', methods=['GET'])
 def get_media():
@@ -522,7 +523,8 @@ def get_media():
         end_date = request.args.get('end_date')
 
         try:
-            with db_connection.cursor() as cursor:
+            with get_db_connection() as db_connection:
+                cursor = db_connection.cursor()
                 cursor.execute(
                     "SELECT media_id, mediatitle, media_type, upload_datetime, media_data FROM media WHERE user_id = %s AND upload_datetime BETWEEN %s AND %s",
                     (user_id, start_date, end_date))
@@ -549,11 +551,11 @@ def get_media():
             # Return a JSON response with media records
             return jsonify({'media': media_list})
         except Exception as e:
-            print("An error occurred:", e)
+            # Log the exception details for debugging
+            traceback.print_exc()
             return jsonify({'error': 'An error occurred'}), 500  # Internal Server Error
     else:
         return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
-
 
 def generate_video_thumbnail(video_path):
     try:
@@ -585,13 +587,14 @@ def generate_video_thumbnail(video_path):
         print("An error occurred while generating video thumbnail:", e)
         return ''
 
-
+import logging
 @app.route('/insertmedia', methods=['POST'])
 def insert_media():
     user_id = session.get('user_id')
 
     if user_id:
         try:
+            app.logger.info('Received POST request to insert_media')
             # Use get_db_connection to obtain a database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
@@ -599,6 +602,10 @@ def insert_media():
 
                     if request.method == 'POST':
                         file = request.files['file']
+                        media_title = request.form['mediaTitle']
+                        print(request.form)
+                        print("Received user_id:", user_id)
+                        print("Received media_title:", media_title)
                         if file and allowed_file(file.filename):
                             try:
                                 filename = secure_filename(file.filename)
@@ -615,33 +622,41 @@ def insert_media():
                                     # Update the SQL statement to include placeholders for img
                                     cursor.execute(
                                         "INSERT INTO media (user_id, media_type, mediatitle, media_data, upload_datetime) VALUES (%s, %s, %s, %s, %s)",
-                                        (user_id, 'image', 'title', filename,
+                                        (user_id, 'image', media_title, filename,
                                          upload_datetime))  # Modify placeholders accordingly
                                     db_connection.commit()
                                 else:
                                     # Update the SQL statement to include placeholders for video
                                     cursor.execute(
                                         "INSERT INTO media (user_id, media_type, mediatitle, media_data, upload_datetime) VALUES (%s, %s, %s, %s, %s)",
-                                        (user_id, 'video', 'title', filename,
+                                        (user_id, 'video', media_title, filename,
                                          upload_datetime))  # Modify placeholders accordingly
                                     db_connection.commit()
 
                                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                                flash('File uploaded successfully', 'success')
-                                return jsonify({'message': 'File uploaded successfully'})
+                                flash('File uploaded successfully', 'File uploaded successfully')
+                                return redirect(url_for('view_media'))
                             except Exception as e:
-                                flash('File upload failed', 'danger')
+                                flash('File upload failed', 'File upload failed')
                                 print("An error occurred during file upload:", e)
-                                return jsonify({'error': 'File upload failed'})
+                                return redirect(url_for('view_media'))
 
             return jsonify({'error': 'Invalid request'}), 400  # Bad request status code
 
         except Exception as e:
+            app.logger.error(f'An error occurred: {str(e)}')
             print("An error occurred while handling the request:", e)
-            return jsonify({'error': 'An error occurred while handling the request'}), 500  # Internal server error
+            return jsonify({'error': 'An error occurred while handling the request: ' + str(e)}), 400 # Internal server error
 
     else:
         return jsonify({'error': 'User not authenticated'}), 401  # Unauthorized status code
+
+if not app.debug:
+    app.logger.setLevel(logging.INFO)
+    handler = logging.FileHandler('error.log')
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+    app.logger.addHandler(handler)
 
 
 @app.route('/deletemedia', methods=['POST'])
@@ -858,48 +873,54 @@ def create_profile():
             last_name = request.form.get('last_name')
             password = request.form.get('password')
             role = request.form.get('role')
-            # Add other user details here as needed
 
-            default_profile_picture = 'default_profile_picture.jpg'
+            # Check if a profile picture was uploaded
+            if 'profile_picture' in request.files:
+                profile_picture = request.files['profile_picture']
+                if profile_picture:
+                    # Generate a unique filename for the uploaded picture
+                    filename = secure_filename(profile_picture.filename)
+                    new_picture_filename = f"user_{user_id}_{filename}"
+
+                    # Save the uploaded picture to the static folder
+                    new_picture_path = os.path.join(app.static_folder, 'images', new_picture_filename)
+                    profile_picture.save(new_picture_path)
+                else:
+                    new_picture_filename = 'default_profile_picture.jpg'
+            else:
+                new_picture_filename = 'default_profile_picture.jpg'
 
             # Define and obtain the database connection
             with get_db_connection() as db_connection:
+                # Check if the email already exists in the users table
                 with db_connection.cursor() as cursor:
-                    # Check if the email already exists in the users table
                     cursor.execute("SELECT COUNT(*) FROM users WHERE email = %s", (email,))
                     existing_user_count = cursor.fetchone()[0]
 
-                    if existing_user_count > 0:
-                        # Email already exists, show an error message and redirect
-                        flash("User already exists.", "User already exists.")
-                        # return redirect(url_for('manage_users'))
-                        return jsonify(message="User already exists.")
+                if existing_user_count > 0:
+                    # Email already exists, show an error message
+                    return jsonify(message="User already exists."), 400
 
-                    # Insert the user's details into the database
+                # Insert the user's details into the database
+                with db_connection.cursor() as cursor:
                     cursor.execute(
                         "INSERT INTO users (email, first_name, last_name, password, role, profile_picture) VALUES (%s, %s, %s, %s, %s, %s)",
-                        (email, first_name, last_name, password, role, default_profile_picture)
+                        (email, first_name, last_name, password, role, new_picture_filename)
                     )
                     # Commit the transaction
                     db_connection.commit()
 
-                    flash("New User Added Successfully!", "New User Added Successfully!")
+            # User creation successful
+            return jsonify(message="Success")
 
         except Exception as e:
             # Handle exceptions, log errors, or return appropriate error responses
             print("An error occurred:", e)
+            return jsonify(message="An error occurred."), 500
 
-            # Rollback the transaction if an error occurred
-            if db_connection.is_connected():
-                db_connection.rollback()
-
-        # You can return a response or JSON data here based on your application's requirements
-        return jsonify(message="Success")
-        # return redirect(url_for('manage_users'))
     else:
         return jsonify(message="User not logged in"), 401
-
-
+    f
 import datetime
 
 
@@ -1361,49 +1382,51 @@ def update_profile():
     new_first_name = request.form['first_name']
     new_last_name = request.form['last_name']
     new_password = request.form['password']
+    new_role = request.form['role']
 
-    # Check if a new profile picture was uploaded
-    if 'profile_picture' in request.files:
-        profile_picture = request.files['profile_picture']
-        if profile_picture.filename != '':
-            # Generate a unique filename for the uploaded picture
-            filename = secure_filename(profile_picture.filename)
-            new_picture_filename = f"user_{user_id}_{filename}"
+    # Get a database connection within the route handler
+    with get_db_connection() as db_connection:
+        if db_connection is None:
+            return jsonify(message="Database connection error.")
 
-            # Save the uploaded picture to the static folder
-            new_picture_path = os.path.join(app.static_folder, new_picture_filename)
-            profile_picture.save(new_picture_path)
+        # Check if a new profile picture was uploaded
+        if 'profile_picture' in request.files:
+            profile_picture = request.files['profile_picture']
+            if profile_picture.filename != '':
+                try:
+                    # Generate a unique filename for the uploaded picture
+                    filename = secure_filename(profile_picture.filename)
+                    new_picture_filename = f"user_{user_id}_{filename}"
 
-            # Update the profile_picture value in the database
-            with connection_pool.get_connection() as db_connection:
-                # Use the db_connection for your database operations
-                cursor = db_connection.cursor()
+                    # Save the uploaded picture to the static folder
+                    new_picture_path = os.path.join(app.static_folder, new_picture_filename)
+                    profile_picture.save(new_picture_path)
+
+                    # Update the profile_picture value in the database
+                    with db_connection.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE users SET profile_picture=%s WHERE user_id=%s",
+                            (new_picture_filename, user_id)
+                        )
+                        db_connection.commit()
+
+                except Exception as e:
+                    print("An error occurred while updating the profile picture:", e)
+                    return jsonify(message="Error updating profile picture.")
+
+        try:
+            # Update the user's profile information in the database
+            with db_connection.cursor() as cursor:
                 cursor.execute(
-                    "UPDATE users SET profile_picture=%s WHERE user_id=%s",
-                    (new_picture_filename, user_id)
+                    "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s, role=%s WHERE user_id=%s",
+                    (new_email, new_password, new_first_name, new_last_name, new_role, user_id)
                 )
                 db_connection.commit()
 
-    try:
-        # Update the user's profile information in the database
-        with db_connection.cursor() as cursor:
-            cursor.execute(
-                "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s WHERE user_id=%s",
-                (new_email, new_password, new_first_name, new_last_name, user_id)
-            )
-            db_connection.commit()
+        except Exception as e:
+            print("An error occurred:", e)
+            return jsonify(message="An error occurred.")
 
-    except Exception as e:
-        print("An error occurred:", e)
-        return jsonify(message="An error occurred.")
-
-    finally:
-        # Close the database connection when done
-        if db_connection.is_connected():
-            cursor.close()
-            # db_connection.close()
-
-    # return redirect(url_for('profile'))
     return jsonify(message="Success")
 
 

@@ -18,6 +18,7 @@ function getUsersList(){
             if(response.users_list.length > 0){
                 var counter = 1;
                 response.users_list.forEach(element => {
+                    const profilePictureUrl = `/static/images/${element[6]}`;
                     $('.record-table tbody').append(`
                         <tr>
                             <th>${counter}</th>
@@ -27,7 +28,7 @@ function getUsersList(){
                             <td>${element[4]}</td>
                             <td>${element[5]}</td>
                             <td>
-                                <img src="/static/images/${element[6]}" draggable="false" style="width:90px; border-radius: 10px;">
+                                <img src="${profilePictureUrl}" draggable="false" style="width:90px; border-radius: 10px; cursor: pointer;" onclick="viewProfilePicture('${profilePictureUrl}')">
                             </td>
                             <td>
                                 <span class="text-primary" style="cursor: pointer;" onclick="editAccount(${element[0]})"><i class="fas fa-edit"></i></span>
@@ -53,6 +54,18 @@ function getUsersList(){
     })
 }
 
+function viewProfilePicture(profilePictureUrl) {
+    $('#largeProfilePicture').attr('src', profilePictureUrl);
+    $('#profilePictureModal').modal('show');
+}
+$(document).ready(function () {
+    // Add a click event listener to the close button within the modal
+    $('.modal .close').on('click', function () {
+        $(this).closest('.modal').modal('hide'); // Close the closest modal
+    });
+});
+
+
 function editAccount(userID){
     $.ajax({
         url: '/getUserDetails',
@@ -65,6 +78,7 @@ function editAccount(userID){
             $('#email').val(response.user_details[0][1])
             $('#password').val(response.user_details[0][4])
             $('#role').val(response.user_details[0][5])
+            $('#profile_picture').val('')
 
             $('#addNewUserModal').modal('show')
             $('#submitButton').text('Update profile')
@@ -74,6 +88,7 @@ function editAccount(userID){
 
 $('#submitButton').click(function(){
     if($(this).text() == 'Update profile'){
+        console.log($('#userProfileForm').serialize());
         $.ajax({
             url: '/update_profile',
             method: 'POST',
@@ -86,6 +101,9 @@ $('#submitButton').click(function(){
                     alert(response.message)
                 }
                 $('#addNewUserModal').modal('hide')
+            },
+            error: function (xhr, status, error) {
+                console.error(error);
             }
         })
     }
@@ -106,6 +124,38 @@ $('#submitButton').click(function(){
         })
     }
 })
+
+// Event listener for profile picture input change
+$('#profile_picture').on('change', function () {
+    const fileInput = this;
+    const profilePicturePreview = $('#profilePicturePreview');
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            // Display the selected image in the preview
+            profilePicturePreview.attr('src', e.target.result);
+        };
+
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        // No file selected or invalid file format, show the default profile picture
+        profilePicturePreview.attr('src', '/static/images/default_profile_picture.jpg');
+    }
+});
+
+// Function to clear the profile picture input and preview
+function clearProfilePictureInput() {
+    $('#profile_picture').val(null);
+    $('#profilePicturePreview').attr('src', '/static/images/default_profile_picture.jpg');
+}
+
+// Clear the profile picture input and preview when the modal is closed
+$('#addNewUserModal').on('hidden.bs.modal', function () {
+    clearProfilePictureInput();
+});
+
 
 function deleteAccount(userID){
     if(confirm("Are you sure you want to delete this account? It will permanently delete all the data for this user.")){
