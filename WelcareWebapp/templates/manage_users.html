@@ -32,14 +32,6 @@
                     </div>
                 </div>
             </div>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                <div class="alert alert-{{ messages[0][1] }}">
-                  {{ messages[0][0] }}
-                </div>
-              {% endif %}
-            {% endwith %}
-
             <div class="car0d">
                 <div class="card-body">
                     <table class="table table-striped record-table d-none">
@@ -90,6 +82,7 @@
                     <button type="button" class="btn btn-danger closeModal" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
+
                 </div>
                 <form id="userProfileForm" enctype="multipart/form-data" method="POST">
                     <div class="modal-body">
@@ -106,7 +99,7 @@
                             <div class="col-md-6 mb-4">
                                 <div class="input-container">
                                     <input type="text" class="form-control" id="first_name" name="first_name" required>
-                                    <input type="hidden" class="form-control" id="user_id" name="user_id">
+                                    <input type="hidden" class="form-control" id="userr_id" name="userr_id">
                                     <label for="first_name">First name</label>
                                 </div>
                             </div>
@@ -137,7 +130,7 @@
                                     <option value="">Select role</option>
                                     <option value="User">User</option>
                                     <option value="Staff">Staff</option>
-                                    <option value="Staff">Admin</option>
+                                    <option value="Admin">Admin</option>
                                 </select>
                             </div>
                         </div>

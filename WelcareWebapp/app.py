@@ -14,8 +14,11 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
 import uuid
+from flask import Flask
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 app.secret_key = 'welcare'
 UPLOAD_FOLDER = os.path.join('static', 'media')  # Set the path to static/media
@@ -846,7 +849,7 @@ def get_user_details():
 
     if user_id:
         try:
-            requested_user_id = request.args.get('userID')
+            requested_user_id = request.args.get('userrID')
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
                     cursor.execute("SELECT * FROM users WHERE user_id = %s", (requested_user_id,))
@@ -911,7 +914,7 @@ def create_profile():
                     db_connection.commit()
 
             # User creation successful
-            return jsonify(message="Success")
+            return jsonify(message="User Created Successfully!")
 
         except Exception as e:
             # Handle exceptions, log errors, or return appropriate error responses
@@ -996,25 +999,30 @@ def delete_user():
 
     if user_id:
         try:
+            # Get the user_id to delete
+            user_id_to_delete = int(request.args.get('userID'))  # Convert to integer
+
+            if user_id == user_id_to_delete:
+                # The logged-in user is trying to delete their own account
+                flash("Cannot delete your own account")  # Store the message with a category 'error'
+                return jsonify(message='Cannot delete your own account')
+
             # Use get_db_connection to obtain a database connection
             with get_db_connection() as db_connection:
                 with db_connection.cursor() as cursor:
-                    # Get the user_id to delete
-                    user_id_to_delete = int(request.args.get('userID'))  # Convert to integer
-
                     cursor.execute("DELETE FROM users WHERE user_id = %s", (user_id_to_delete,))
 
                     # Commit the transaction
                     db_connection.commit()
 
-                    flash("User deleted successfully!", "User deleted successfully!")
+                    flash("User deleted successfully!")
 
-            # return redirect(url_for('manage_users'))
-            return jsonify(message="Success")
+            return jsonify(message="User deleted successfully!")
 
         except Exception as e:
             # Handle exceptions, log errors, or return appropriate error responses
             print("An error occurred:", e)
+            flash("Failed to delete user")  # Error message
             return jsonify(message="Failed to delete user"), 500
 
     else:
@@ -1370,6 +1378,7 @@ def staff_dashboard():
         print("An error occurred:", e)
         return "An error occurred while processing your request", 500
 
+from werkzeug.utils import secure_filename
 
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
@@ -1378,57 +1387,104 @@ def update_profile():
 
     user_id = session['user_id']
 
+    userr_id = request.form['userr_id']
     new_email = request.form['email']
     new_first_name = request.form['first_name']
     new_last_name = request.form['last_name']
     new_password = request.form['password']
     new_role = request.form['role']
 
-    # Get a database connection within the route handler
-    with get_db_connection() as db_connection:
-        if db_connection is None:
-            return jsonify(message="Database connection error.")
+    try:
+        if userr_id == user_id:
+            # Get a database connection within the route handler
+            with get_db_connection() as db_connection:
+                if db_connection is None:
+                    return jsonify(message="Database connection error.")
 
-        # Check if a new profile picture was uploaded
-        if 'profile_picture' in request.files:
-            profile_picture = request.files['profile_picture']
-            if profile_picture.filename != '':
-                try:
-                    # Generate a unique filename for the uploaded picture
-                    filename = secure_filename(profile_picture.filename)
-                    new_picture_filename = f"user_{user_id}_{filename}"
+                # Initialize the variable for the new profile picture filename
+                new_picture_filename = None
 
-                    # Save the uploaded picture to the static folder
-                    new_picture_path = os.path.join(app.static_folder, new_picture_filename)
-                    profile_picture.save(new_picture_path)
+                # Check if a new profile picture was uploaded
+                if 'profile_picture' in request.files:
+                    profile_picture = request.files['profile_picture']
+                    if profile_picture.filename != '':
+                        try:
+                            # Generate a unique filename for the uploaded picture
+                            filename = secure_filename(profile_picture.filename)
+                            new_picture_filename = f"user_{user_id}_{filename}"
 
-                    # Update the profile_picture value in the database
-                    with db_connection.cursor() as cursor:
+                            # Save the uploaded picture to the static folder
+                            new_picture_path = os.path.join(app.static_folder, 'images', new_picture_filename)
+                            profile_picture.save(new_picture_path)
+
+                        except Exception as e:
+                            print("An error occurred while updating the profile picture:", e)
+                            return jsonify(message="Error updating profile picture.")
+
+                # Update the user's profile information in the database
+                with db_connection.cursor() as cursor:
+                    # Construct the SQL query dynamically based on whether a new picture was uploaded
+                    if new_picture_filename:
                         cursor.execute(
-                            "UPDATE users SET profile_picture=%s WHERE user_id=%s",
-                            (new_picture_filename, user_id)
+                            "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s, role=%s, profile_picture=%s WHERE user_id=%s",
+                            (new_email, new_password, new_first_name, new_last_name, new_role, new_picture_filename, user_id)
                         )
-                        db_connection.commit()
+                    else:
+                        cursor.execute(
+                            "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s, role=%s WHERE user_id=%s",
+                            (new_email, new_password, new_first_name, new_last_name, new_role, user_id)
+                        )
 
-                except Exception as e:
-                    print("An error occurred while updating the profile picture:", e)
-                    return jsonify(message="Error updating profile picture.")
+                    db_connection.commit()
+        else:
+            # Get a database connection within the route handler
+            with get_db_connection() as db_connection:
+                if db_connection is None:
+                    return jsonify(message="Database connection error.")
 
-        try:
-            # Update the user's profile information in the database
-            with db_connection.cursor() as cursor:
-                cursor.execute(
-                    "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s, role=%s WHERE user_id=%s",
-                    (new_email, new_password, new_first_name, new_last_name, new_role, user_id)
-                )
-                db_connection.commit()
+                # Initialize the variable for the new profile picture filename
+                new_picture_filename = None
 
-        except Exception as e:
-            print("An error occurred:", e)
-            return jsonify(message="An error occurred.")
+                # Check if a new profile picture was uploaded
+                if 'profile_picture' in request.files:
+                    profile_picture = request.files['profile_picture']
+                    if profile_picture.filename != '':
+                        try:
+                            # Generate a unique filename for the uploaded picture
+                            filename = secure_filename(profile_picture.filename)
+                            new_picture_filename = f"user_{user_id}_{filename}"
+
+                            # Save the uploaded picture to the static folder
+                            new_picture_path = os.path.join(app.static_folder, 'images', new_picture_filename)
+                            profile_picture.save(new_picture_path)
+
+                        except Exception as e:
+                            print("An error occurred while updating the profile picture:", e)
+                            return jsonify(message="Error updating profile picture.")
+
+                # Update the user's profile information in the database
+                with db_connection.cursor() as cursor:
+                    # Construct the SQL query dynamically based on whether a new picture was uploaded
+                    if new_picture_filename:
+                        cursor.execute(
+                            "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s, role=%s, profile_picture=%s WHERE user_id=%s",
+                            (new_email, new_password, new_first_name, new_last_name, new_role, new_picture_filename,
+                             userr_id)
+                        )
+                    else:
+                        cursor.execute(
+                            "UPDATE users SET email=%s, password=%s, first_name=%s, last_name=%s, role=%s WHERE user_id=%s",
+                            (new_email, new_password, new_first_name, new_last_name, new_role, userr_id)
+                        )
+
+                    db_connection.commit()
+
+
+    except Exception as e:
+        print("An error occurred:", e)
+        return jsonify(message="An error occurred.")
 
     return jsonify(message="Success")
-
 
 @app.route('/logout')
 def logout():

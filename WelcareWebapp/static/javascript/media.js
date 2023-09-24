@@ -306,16 +306,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Event listener for clicking the "Capture Photo" button
             captureButton.addEventListener('click', function () {
+
                 $('#save-media').prop('disabled', false);
                 $('#start-record').prop('disabled', false);
                 $('#stop-record').prop('disabled', true);
                 $('#download-video').prop('disabled', true);
                 photoCanvas.style.display = "block";
                 videoCanvas.style.display = "none";
+                photoCanvas.width = videoElement.videoWidth;
+                photoCanvas.height = videoElement.videoHeight;
+                // Clear the canvas before capturing
+                photoCanvas.getContext('2d').clearRect(0, 0, photoCanvas.width, photoCanvas.height);
                 if (cameraStream) {
                     isCapturingImage = true;
                     toggleCanvasVisibility(isCapturingImage);
-                    photoCanvas.getContext('2d').drawImage(videoElement, 340, 640);
+                    photoCanvas.getContext('2d').drawImage(videoElement, 0, 0);
                     capturedImageDataURL = photoCanvas.toDataURL('image/jpeg');
                 } else {
                     console.error('Camera not started.');
@@ -388,11 +393,14 @@ document.addEventListener('DOMContentLoaded', function () {
             // Event listener for clicking the "Save" button
             saveMediaButton.addEventListener('click', function () {
                 if (photoCanvas.style.display === 'block') {
+
                     const imageDataURL = photoCanvas.toDataURL('image/jpeg');
                     addMediaToPreviewContainer(imageDataURL, 'image');
                 } else if (videoCanvas.style.display === 'block') {
-                    const videoDataURL = videoCanvas.toDataURL('video/webm');
-                    addMediaToPreviewContainer(videoDataURL, 'video');
+                    // const videoDataURL = videoCanvas.toDataURL('video/webm');
+                    // console.log(videoDataURL,'videoDataURL')
+                    // console.log(videoDataURL,'videoDataURL')
+                    addMediaToPreviewContainer(capturedVideoDataURL, 'video');
                 }
 
                 // Disable the "Save" button

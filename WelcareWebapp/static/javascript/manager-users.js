@@ -66,19 +66,23 @@ $(document).ready(function () {
 });
 
 
-function editAccount(userID){
+function editAccount(userrID){
     $.ajax({
         url: '/getUserDetails',
         method: 'GET',
-        data: {'userID': userID},
+        data: {'userrID': userrID},
         success: function(response) {
-            $('#user_id').val(response.user_details[0][0])
+            $('#userr_id').val(response.user_details[0][0])
             $('#first_name').val(response.user_details[0][2])
             $('#last_name').val(response.user_details[0][3])
             $('#email').val(response.user_details[0][1])
             $('#password').val(response.user_details[0][4])
             $('#role').val(response.user_details[0][5])
-            $('#profile_picture').val('')
+
+            // Display the profile picture
+            const profilePicturePath = response.user_details[0][6]; // Assuming this is the file path
+            const profilePictureUrl = `/static/images/${profilePicturePath}`;
+            $('#profilePicturePreview').attr('src', profilePictureUrl);
 
             $('#addNewUserModal').modal('show')
             $('#submitButton').text('Update profile')
@@ -89,10 +93,13 @@ function editAccount(userID){
 $('#submitButton').click(function(){
     if($(this).text() == 'Update profile'){
         console.log($('#userProfileForm').serialize());
+        var formData = new FormData($('#userProfileForm')[0]);
         $.ajax({
             url: '/update_profile',
             method: 'POST',
-            data: $('#userProfileForm').serialize(),
+            data: formData,
+            processData: false,
+            contentType: false,
             success: function(response) {
                 if(response.message == 'Success'){
                     getUsersList();
@@ -108,10 +115,13 @@ $('#submitButton').click(function(){
         })
     }
     else{
+        var formData = new FormData($('#userProfileForm')[0]);
         $.ajax({
             url: '/createProfile',
             method: 'POST',
-            data: $('#userProfileForm').serialize(),
+            data: formData,
+            processData: false,
+            contentType: false,
             success: function(response) {
                 if(response.message == 'Success'){
                     getUsersList();
@@ -120,6 +130,10 @@ $('#submitButton').click(function(){
                     alert(response.message)
                 }
                 $('#addNewUserModal').modal('hide')
+                location.reload();
+            },
+            error: function (xhr, status, error) {
+                console.error(error);
             }
         })
     }
@@ -172,5 +186,6 @@ function deleteAccount(userID){
                 }
             }
         })
+        location.reload();
     }
 }
