@@ -9,52 +9,49 @@ $.ajax({
     method: 'GET',
     success: function(response) {
         response.users_list.forEach(element => {
-            $('#user_id').append(`<option value="${element[0]}">${element[2]}</option>`);
+            $('#userr_id').append(`<option value="${element[0]}">${element[1]}</option>`)
         });
     }
 });
 
+$('#addNewAttendance').click(function(){
+    const date = new Date();
+    $('#attendance_date').val(date.toISOString().slice(0, 16))
+
+    $('#submitButton').text('Add Attendance')
+    $('#addNewAttendanceModal').modal('show')
+})
+
+$('.closeModal').click(function(){
+    $('#addNewAttendanceModal').modal('hide')
+})
+
 var allAttendance = '';
 function getAttendance(){
     $.ajax({
-        url: '/getAttendanceForAdmin',
+        url: '/getattendanceforadmin',
         method: 'GET',
         data: {
             start_date: moment($('#reportrange span').text().split(' - ')[0], 'MMMM D, YYYY').format('YYYY-MM-DD'),
             end_date: moment($('#reportrange span').text().split(' - ')[1], 'MMMM D, YYYY').format('YYYY-MM-DD')
         },
         success: function(response) {
-            $('.record-table tbody').empty();
+            $('.record-table tbody').empty()
             if(response.welcare_attendance.length > 0){
                 var counter = 1;
                 allAttendance = response.welcare_attendance;
                 response.welcare_attendance.forEach(element => {
-                    var mediaElement;
-
-                    // Check if element.media_path exists and is a string
-                    if (typeof element.media_path === 'string') {
-                        if (element.media_path.endsWith(".mp4")) {
-                            // If it's an mp4 video file, display it using a video tag
-                            mediaElement = `<video controls class="video-preview"><source src="/static/attendance/${element.media_path}" type="video/mp4"></video>`;
-                        } else {
-                            // For other file types, display a message indicating the unsupported media type
-                            mediaElement = `<p class="text-danger">Unsupported media type: ${element.media_path}</p>`;
-                        }
-                    } else {
-                        // Handle the case where element.media_path is not a string
-                        mediaElement = `<p class="text-danger">Invalid media path</p>`;
-                    }
-
+                    const attendancepathUrl = `/static/attendance/${element[6]}`;
                     $('.record-table tbody').append(`
                         <tr>
                             <th>${counter}</th>
                             <td>${element[1]} ${element[2]}</td>
-                            <td>${element[3]}</td> <!-- Display date time -->
-                            <td>${element[4]}</td> <!-- Display title -->
-                            <td>${element[5]}</td> <!-- Display title -->
+                            <td>${element[3]}</td>
+                            <td>${element[4]}</td>
+                            <td>${element[5]}</td>
                             <td>
-                                <video controls class="video-preview" style="width: 90px; border-radius: 10px;">
-                                    <source src="/static/attendance/${element[6]}" type="video/mp4">
+                                <video controls style="width: 90px; border-radius: 10px; cursor: pointer;" onclick="viewattendancepath('${attendancepathUrl}')">
+                                    <source src="${attendancepathUrl}" type="video/mp4">
                                     Your browser does not support the video tag.
                                 </video>
                             </td>
@@ -64,34 +61,150 @@ function getAttendance(){
                                 <span class="text-danger" style="cursor: pointer;" onclick="deleteNote(${element[0]})"><i class="fas fa-trash"></i></span>
                             </td>
                         </tr>
-                    `);
-                    counter++;
+                    `)
+                    counter ++;
                 });
-
-                $('.record-table').removeClass('d-none');
-                $('#attendance-records-body').html('');
+                $('.record-table').removeClass('d-none')
+                $('#attendance-records-body').html('')
             }
             else{
-                $('.record-table').addClass('d-none');
-                $('#attendance-records-body').html('<p class="text-muted">No records available.</p>');
+                $('.record-table').addClass('d-none')
+                $('#attendance-records-body').html('<p class="text-muted">No record available.</p>')
             }
-            // $('#attendance-records-body').html(response);
+            // $('#diary-records-body').html(response);
         },
         error: function(xhr, status, error) {
             console.error(error);
         }
-    });
+    })
 }
 
-// Add a click event handler to all video elements with the class "video-preview"
-$('.video-preview').click(function () {
-    var videoSource = $(this).find('source').attr('src'); // Get the video source URL
-    $('#video-player').attr('src', videoSource); // Set the source of the video player
-    $('.popup').show(); // Show the popup
+function viewattendancepath(attendancepathUrl) {
+    $('#videoPlayer').attr('src', attendancepathUrl);
+    $('#videoModal').modal('show');
+}
+
+
+function editNote(attendanceID) {
+    var result = allAttendance.find(function (item) {
+        return item[0] == attendanceID;
+    });
+
+    $('#attendance_id').val(result[0]);
+    $('#userr_id').val(result[7]);
+    var parsedDate = new Date(result[4]);
+    $('#attendance_date').val(parsedDate.toISOString().slice(0, 16));
+    $('#title').val(result[5]);
+    $('#media_path').val('');
+    const attendancepathUrl = `/static/attendance/${result[6]}`;
+    $('#attendancepathPreview').attr('src', attendancepathUrl);
+
+    $('#submitButton').text('Update attendance');
+    $('#addNewAttendanceModal').modal('show');
+}
+
+function deleteNote(attendanceID){
+    if(confirm("Are you sure you want to delete this record?")){
+        $.ajax({
+            url: '/deleteAttendance',
+            method: 'GET',
+            data: {'attendanceID': attendanceID},
+            success: function(response) {
+                if(response.message == 'Success'){
+                    getAttendance();
+                }
+                else{
+                    alert('An error occured.')
+                }
+            }
+        })
+    }
+}
+
+$('#submitButton').click(function(){
+    if($(this).text() == 'Update attendance'){
+        console.log($('#noteForm').serialize());
+        var formData = new FormData($('#noteForm')[0]);
+        $.ajax({
+            url: '/updateattendance',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if(response.message == 'Success'){
+                    getAttendance();
+                }
+                else{
+                    alert('An error occured.')
+                }
+                $('#addNewAttendanceModal').modal('hide');
+                location.reload();
+            },
+            error: function (xhr, status, error) {
+                console.error(xhr.status + ': ' + xhr.statusText); // Log any AJAX errors
+                alert('AJAX request failed. Check the console for more details.');
+            }
+        })
+    }
+    else{
+        console.log($('#noteForm').serialize());
+        var formData = new FormData($('#noteForm')[0]);
+        $.ajax({
+            url: '/Addnewattendance',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if(response.message == 'Success'){
+                    getAttendance();
+                }
+                else{
+                    alert('An error occured.')
+                }
+                $('#addNewAttendanceModal').modal('hide');
+                location.reload();
+            },
+            error: function (xhr, status, error) {
+                console.error(xhr.status + ': ' + xhr.statusText); // Log any AJAX errors
+                alert('AJAX request failed. Check the console for more details.');
+            }
+        })
+    }
+})
+
+$('#media_path').on('change', function () {
+    const fileInput = this;
+    const attendancepathPreview = $('#attendancepathPreview');
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            // Display the selected video in the preview
+            attendancepathPreview.attr('src', e.target.result);
+        };
+
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        // No file selected or invalid file format, clear the video preview
+        attendancepathPreview.attr('src', '');
+    }
 });
 
-// Add a click event handler to close the video popup
-$('.popup').click(function () {
-    $('#video-player').attr('src', ''); // Clear the source of the video player
-    $('.popup').hide(); // Hide the popup
+function clearAttendanceInput() {
+    $('#media_path').val(null);
+    $('#attendancepathPreview').attr('src');
+}
+
+// Clear the profile picture input and preview when the modal is closed
+$('#addNewAttendanceModal').on('hidden.bs.modal', function () {
+    clearAttendanceInput();
+});
+
+
+
+$('.closeModal').click(function(){
+    $('#addNewAttendanceModal').modal('hide');
 });

@@ -4,7 +4,7 @@ $('.sidebar').html(
             <img src="../static/walcarelogo.png" alt="Logo" class="logo-img">
         </div>
     
-        <a href="javascript:void(0);">
+        <a href="/adminprofile">
             <!--<img class="user-image" src="../static/images/blank-profile.jpg" draggable="false" alt="User Profile">-->
             <img class="user-image" src="${userData.profile_picture}" alt="User Profile">
         </a>
@@ -12,7 +12,7 @@ $('.sidebar').html(
             ${userData.first_name} ${userData.last_name}
         </div>
         <div class="mt-3 text-center">
-            <a class="profile-status" href="/profile">Edit</a>
+            <a class="profile-status" href="/adminprofile">Edit</a>
         </div>
     
         <div class="modules-container">

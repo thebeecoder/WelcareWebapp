@@ -9,7 +9,7 @@ $.ajax({
     method: 'GET',
     success: function(response) {
         response.users_list.forEach(element => {
-            $('#user_id').append(`<option value="${element[0]}">${element[1]}</option>`)
+            $('#userr_id').append(`<option value="${element[0]}">${element[1]}</option>`)
         });
     }
 });
@@ -77,7 +77,7 @@ function editNote(redordID) {
     });
 
     $('#record_id').val(result[0]);
-    $('#user_id').val(result[5]);
+    $('#userr_id').val(result[5]);
     var parsedDate = new Date(result[4]);
     $('#visit_date').val(parsedDate.toISOString().slice(0, 16));
 

@@ -1,87 +1,104 @@
 $('#reportrange').on('DOMSubtreeModified', function () {
     if ($('#reportrange span').text() != '') {
-        getAllNotes();
+        getNotes();
     }
 });
 
-$('#addNewUser').click(function(){
-    $('#submitButton').text('Create profile')
-    $('#addNewUserModal').modal('show')
+$.ajax({
+    url: '/getUsersList',
+    method: 'GET',
+    success: function(response) {
+        response.users_list.forEach(element => {
+            $('#userr_id').append(`<option value="${element[0]}">${element[1]}</option>`)
+        });
+    }
+});
+
+$('#addNewNote').click(function(){
+    const date = new Date();
+    $('#note_date').val(date.toISOString().slice(0, 16))
+
+    $('#submitButton').text('Add Note')
+    $('#addNewNoteModal').modal('show')
 })
 
 $('.closeModal').click(function(){
-    $('#addNewUserModal').modal('hide')
+    $('#addNewNoteModal').modal('hide')
 })
 
-function getAllNotes() {
+var allNotes = '';
+function getNotes(){
     $.ajax({
         url: '/getNotesForAdmin',
         method: 'GET',
         data: {
             start_date: moment($('#reportrange span').text().split(' - ')[0], 'MMMM D, YYYY').format('YYYY-MM-DD'),
-            end_date: moment($('#reportrange span').text().split(' - ')[1], 'MMMM D, YYYY').format('YYYY-MM-DD')
+            end_date: moment($('#reportrange span').text().split(' - ')[1], 'MMMM D, YYYY').format('YYYY-MM-DD'),
+            order_by: 'desc'
         },
-        success: function (response) {
-            console.log(response);
-            $('.record-table tbody').empty();
-
-            if (response.notes.length > 0) {
+        success: function(response) {
+            $('.record-table tbody').empty()
+            if(response.notes.length > 0){
                 var counter = 1;
-
-                response.notes.forEach(note => {
+                allNotes = response.notes;
+                response.notes.forEach(element => {
                     $('.record-table tbody').append(`
                         <tr>
                             <th>${counter}</th>
-                            <td>${note.title}</td>
-                            <td>${note.content}</td>
-                            <td>${note.note_date}</td>
-                            <td>${note.note_id}</td>
+                            <td>${element[1]} ${element[2]}</td>
+                            <td>${element[3]}</td>
+                            <td>${element[4]}</td>
+                            <td>${element[6]}</td>
+                            <td>${element[5]}</td>
                             <td>
-                                <span class="text-primary" style="cursor: pointer;" onclick="editAccount(${note.note_id})"><i class="fas fa-edit"></i></span>
+                                <span class="text-primary" style="cursor: pointer;" onclick="editNote(${element[0]})"><i class="fas fa-edit"></i></span>
                                 &nbsp;
-                                <span class="text-danger" style="cursor: pointer;" onclick="deleteAccount(${note.note_id})"><i class="fas fa-trash"></i></span>
+                                <span class="text-danger" style="cursor: pointer;" onclick="deleteNote(${element[0]})"><i class="fas fa-trash"></i></span>
                             </td>
                         </tr>
-                    `);
-                    counter++;
+                    `)
+                    counter ++;
                 });
-
-                $('.record-table').removeClass('d-none');
-                $('#manage-notes-body').html('');
-            } else {
-                $('.record-table').addClass('d-none');
-                $('#manage-notes-body').html('<p class="text-muted">No record available.</p>');
+                $('.record-table').removeClass('d-none')
+                $('#manage-notes-body').html('')
             }
+            else{
+                $('.record-table').addClass('d-none')
+                $('#manage-notes-body').html('<p class="text-muted">No record available.</p>')
+            }
+            // $('#diary-records-body').html(response);
         },
-        error: function (xhr, status, error) {
+        error: function(xhr, status, error) {
             console.error(error);
-        }
-    });
-}
-
-
-function editAccount(userID){
-    $.ajax({
-        url: '/getUserDetails',
-        method: 'GET',
-        data: {'userID': userID},
-        success: function(response) {
-            console.log(response)
-            $('#submitButton').text('Update profile')
         }
     })
 }
 
-function deleteAccount(userID){
-    if(confirm("Are you sure you want to delete this account?")){
+function editNote(noteID) {
+    var result = allNotes.find(function (item) {
+        return item[0] == noteID;
+    });
+
+    $('#note_id').val(result[0]);
+    $('#userr_id').val(result[7]);
+    var parsedDate = new Date(result[5]);
+    $('#note_date').val(parsedDate.toISOString().slice(0, 16));
+    $('#Title').val(result[4]);
+    $('#content').val(result[6]);
+
+    $('#submitButton').text('Update Note');
+    $('#addNewNoteModal').modal('show');
+}
+
+function deleteNote(noteID){
+    if(confirm("Are you sure you want to delete this note?")){
         $.ajax({
-            url: '/deleteUser',
+            url: '/deleteNote',
             method: 'GET',
-            data: {'userID': userID},
+            data: {'noteID': noteID},
             success: function(response) {
-                console.log(response)
                 if(response.message == 'Success'){
-                    getAllNotes();
+                    getNotes();
                 }
                 else{
                     alert('An error occured.')
@@ -90,3 +107,42 @@ function deleteAccount(userID){
         })
     }
 }
+
+$('#submitButton').click(function(){
+    if($(this).text() == 'Update Note'){
+        $.ajax({
+            url: '/updateNote',
+            method: 'POST',
+            data: $('#noteForm').serialize(),
+            success: function(response) {
+                if(response.message == 'Success'){
+                    getNotes();
+                }
+                else{
+                    alert('An error occured.')
+                }
+                $('#addNewNoteModal').modal('hide');
+            }
+        })
+    }
+    else{
+        $.ajax({
+            url: '/addNewNote',
+            method: 'POST',
+            data: $('#noteForm').serialize(),
+            success: function(response) {
+                if(response.message == 'Success'){
+                    getNotes();
+                }
+                else{
+                    alert('An error occured.')
+                }
+                $('#addNewNoteModal').modal('hide');
+            }
+        })
+    }
+})
+
+$('.closeModal').click(function(){
+    $('#addNewNoteModal').modal('hide');
+});

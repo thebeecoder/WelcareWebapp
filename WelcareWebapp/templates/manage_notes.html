@@ -26,7 +26,7 @@
                             </div>
                         </div>
                         <div class="col-auto">
-                            <input type="button" class="btn btn-light mt-1" value="Add new note" data-toggle="modal" data-target="#addNewUserModal" id="addNewNote">
+                            <input type="button" class="btn btn-light mt-1" value="Add new note" data-toggle="modal" data-target="#addNewNoteModal" id="addNewNote">
                         </div>
                     </div>
                 </div>
@@ -38,10 +38,11 @@
                         <thead>
                             <tr>
                                 <th>S #</th>
+                                <th>Name</th>
+                                <th>Email address</th>
                                 <th>Title</th>
-                                <th>Description</th>
-                                <th>Email</th>
-                                <th>Uploaded by</th>
+                                <th>Note</th>
+                                <th>Date</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -55,7 +56,7 @@
     </div>
 
     <!-- The Modal -->
-    <div class="modal fade" id="addNewUserModal" tabindex="-1" role="dialog" aria-labelledby="addNewUserModal" aria-hidden="true">
+    <div class="modal fade" id="addNewNoteModal" tabindex="-1" role="dialog" aria-labelledby="addNewNoteModal" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -64,43 +65,41 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <form action="/createProfile" method="post">
+                <form id="noteForm">
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-6 mb-4">
+                            <div class="col-md-12 mb-4">
                                 <div class="input-container">
-                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
-                                    <label for="first_name">First name</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <div class="input-container">
-                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
-                                    <label for="last_name">Last name</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="input-container">
-                                    <input type="email" class="form-control" id="email" name="email" required>
-                                    <label for="email">Email address</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <div class="input-container">
-                                    <input type="password" class="form-control" id="password" name="password" required>
-                                    <label for="password">Create password</label>
+                                        <select class="form-control" id="userr_id" name="userr_id" required>
+                                            <option value="" >Select an email</option>
+                                        </select>
+                                        <label for="userr_id"></label>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-12 mb-4">
-                                <select class="form-control">
-                                    <option value="">Select role</option>
-                                    <option value="User">User</option>
-                                    <option value="Staff">Staff</option>
-                                </select>
+                                <div class="input-container">
+                                    <input type="datetime-local" class="form-control" id="note_date" name="note_date" required>
+                                    <input type="hidden" class="form-control" id="note_id" name="note_id">
+                                    <label for="note_date">Visit date</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <div class="input-container">
+                                        <input type="text" class="form-control" id="Title" name="Title" required>
+                                        <label for="Title">Title</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <div class="input-container">
+                                        <input type="text" class="form-control" id="content" name="content" required>
+                                        <label for="content">Note</label>
+                                </div>
                             </div>
                         </div>
                     </div>

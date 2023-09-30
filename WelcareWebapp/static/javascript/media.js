@@ -4,11 +4,8 @@ let capturedVideoDataURL = null;
 function openMediaInLargeView(mediaUrl) {
     $('#mediaLargeView').attr('src', mediaUrl);
     $('#mediaModal').modal('show');
-
-    $('#mediaModal .btn-secondary').on('click', function () {
-        $('#mediaModal').modal('hide'); // This line closes the modal
-    });
 }
+
 // Function to populate media previews
 function populateMediaPreviews(mediaData) {
     const thumbnailSize = '200px'; // Set your desired thumbnail size here
@@ -31,7 +28,7 @@ function populateMediaPreviews(mediaData) {
         } else if (media.media_type.startsWith('video')) {
             mediaElement.innerHTML = `
                 <a class="video-link" href="${mediaUrl}" data-mfp-src="${mediaUrl}">
-                    <img src="data:image/jpeg;base64,${videoThumbnail}" alt="${media.mediatitle}" class="img-thumbnail" style="max-width: 100%; max-height: 100%; cursor: pointer;" data-video="${mediaUrl}" onclick="openMediaInLargeView('${mediaUrl}')">
+                    <img src="data:image/jpeg;base64,${videoThumbnail}" alt="${media.mediatitle}" class="img-thumbnail" style="max-width: 100%; max-height: 100%; cursor: pointer;" data-video="${mediaUrl}">
                     <i class="fas fa-play-circle" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 48px; color: #007bff; cursor: pointer;"></i>
                     <i class="fas fa-times cross-icon" style="cursor: pointer;"></i>
                     <p class="card-text title" color="black">${media.mediatitle}</p> <!-- This is where the title is -->
@@ -41,10 +38,25 @@ function populateMediaPreviews(mediaData) {
 
         }
 
+        $('.video-link').magnificPopup({
+            type: 'iframe', // This specifies that it's an iframe (video)
+            iframe: {
+                patterns: {
+                    youtube: {
+                        index: 'youtube.com/', // YouTube videos
+                        src: mediaUrl // Use the video URL here
+                    }
+                    // Add more patterns for other video platforms if needed
+                }
+            }
+        });
+
         previewContainer.appendChild(mediaElement);
 
         const crossIcon = mediaElement.querySelector('.cross-icon');
         crossIcon.addEventListener('click', function () {
+            event.preventDefault(); // Prevent any default actions
+            event.stopPropagation();
             const mediaId = media.media_id; // Get the media ID from the data attribute
             deleteMediaItemWithConfirmation(mediaId); // Call the function to confirm deletion
         });
@@ -313,6 +325,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 $('#download-video').prop('disabled', true);
                 photoCanvas.style.display = "block";
                 videoCanvas.style.display = "none";
+                const elements = document.getElementsByClassName("record");
+                while(elements.length > 0){
+                    elements[0].parentNode.removeChild(elements[0]);
+                }
                 photoCanvas.width = videoElement.videoWidth;
                 photoCanvas.height = videoElement.videoHeight;
                 // Clear the canvas before capturing
@@ -334,6 +350,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 $('#stop-record').prop('disabled', false);
                 $('#start-record').prop('disabled', true);
                 $('#download-video').prop('disabled', true);
+                const elements = document.getElementsByClassName("record");
+                while(elements.length > 0){
+                    elements[0].parentNode.removeChild(elements[0]);
+                }
                 if (cameraStream) {
                     isCapturingImage = false;
                     toggleCanvasVisibility(isCapturingImage);
@@ -346,9 +366,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     mediaRecorder.addEventListener('stop', function () {
                         let videoLocalURL = URL.createObjectURL(new Blob(videoBlobsRecorded, { type: 'video/webm' }));
                         videoElement.src = videoLocalURL; // Set the video element's source
-                        videoCanvas.getContext('2d').drawImage(videoElement, 340, 640);
+                        // videoCanvas.getContext('2d').drawImage(videoElement, 340, 640);
+                        videoElement.style.display = "none";
                         downloadVideoLink.href = videoLocalURL;
                         capturedVideoDataURL = videoLocalURL;
+                        addMediaToPreviewContainerRecord(capturedVideoDataURL, 'video');
                         const videoContext = videoCanvas.getContext('2d');
                     });
 
@@ -370,7 +392,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 photoCanvas.style.display = "none";
                 if (mediaRecorder && mediaRecorder.state === 'recording') {
                     mediaRecorder.stop();
-                    videoCanvas.getContext('2d').drawImage(videoElement, 340, 640);
+
+
+                    // videoCanvas.getContext('2d').drawImage(videoElement, 340, 640);
                 } else {
                     console.error('Recording not started.');
                 }
@@ -386,6 +410,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 $('#capture-photo').prop('disabled', false);
                 isCapturingImage = false;
                 toggleCanvasVisibility(isCapturingImage);
+                const elements = document.getElementsByClassName("record");
+                while(elements.length > 0){
+                    elements[0].parentNode.removeChild(elements[0]);
+                }
             });
 
 
@@ -436,7 +464,24 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
 
+            function addMediaToPreviewContainerRecord(dataURL, mediaType) {
+                const previewContainer = document.getElementById('preview-record');
+                const previewItem = document.createElement('div');
+                previewItem.className = 'col-md-12 mb-3 record';
 
+                const mediaElement = mediaType.startsWith('image')
+                    ? document.createElement('img')
+                    : document.createElement('video');
+
+                mediaElement.controls = true;
+                mediaElement.src = dataURL;
+
+
+
+                previewItem.appendChild(mediaElement);
+
+                previewContainer.appendChild(previewItem);
+            }
             // Function to add media to the preview container
             function addMediaToPreviewContainer(dataURL, mediaType) {
                 const previewContainer = document.getElementById('preview-container');
@@ -464,8 +509,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 crossIcon.addEventListener('click', function (event) {
                     if (event.target.classList.contains('cross-icon')) {
-                        const mediaId = media.media_id;
-                        deleteMediaItemWithConfirmation(mediaId);
+                        // Get the parent element of the crossIcon
+                        const parentElement = event.target.parentElement;
+
+                        // Check if the parent element exists
+                        if (parentElement) {
+                            // Remove the parent element
+                            parentElement.remove();
+                        }
                     }
                 });
 
@@ -484,85 +535,212 @@ document.addEventListener('DOMContentLoaded', function () {
                 $('#submit').prop('disabled', true);
                 // Get the media title input value
                 const mediaTitle = $('.media-title-input').val();
-
+                const formData = new FormData();
                 // Check if mediaTitle is not empty
                 if (mediaTitle) {
-                    const formData = new FormData();
+
                     formData.append('mediaTitle', mediaTitle); // Include the mediaTitle
 
                     if (capturedImageDataURL) {
-                        formData.append('capturedImage', capturedImageDataURL);
+                        var requestData = JSON.stringify({ photo: capturedImageDataURL,title: mediaTitle});
+                        $.ajax({
+                            url: '/capture_photo',
+                            method: 'POST',
+                            data: requestData,
+                            processData: false,
+                            contentType: 'application/json',
+                            success: function (response) {
+                                // Handle the success response
+                                console.log(response);
+
+                                // Clear the media title input
+                                $('.media-title-input').val('');
+
+                                $('.media-title-input').css('visibility', 'hidden');
+
+                                // Optionally, update the UI with the newly added media
+                                if (response.media) {
+                                    const newMediaContainer = $('#new-media-container');
+
+                                    // Loop through the new media items in the response
+                                    response.media.forEach(function (media) {
+                                        const mediaUrl = `/static/media/${media.media_data}`;
+
+                                        // Create a new element for the media
+                                        const mediaElement = document.createElement('div');
+                                        mediaElement.className = 'new-media-item';
+
+                                        // Check if the media type is image or video and create appropriate HTML
+                                        if (media.media_type.startsWith('image')) {
+                                            mediaElement.innerHTML = `
+                                                <img src="${mediaUrl}" alt="${media.mediatitle}" class="img-thumbnail">
+                                                <p class="media-title">${media.mediatitle}</p>
+                                                <p class="timestamp">${media.upload_datetime}</p>
+                                            `;
+                                        } else if (media.media_type.startsWith('video')) {
+                                            mediaElement.innerHTML = `
+                                                <video controls src="${mediaUrl}" class="video-thumbnail" ></video>
+                                                <p class="media-title">${media.mediatitle}</p>
+                                                <p class="timestamp">${media.upload_datetime}</p>
+                                            `;
+                                        }
+
+                                        // Append the new media element to the container
+                                        newMediaContainer.append(mediaElement);
+                                    });
+
+                                    updateMediaRecords();
+                                }
+
+                                location.reload();
+                                $('#submit').prop('disabled', true);
+                            },
+                            error: function (xhr, status, error) {
+                                // Handle the error response
+                                console.error(error);
+                            }
+                        });
+
                     }
 
                     // Check if there's captured video data and append it
                     if (capturedVideoDataURL) {
-                        formData.append('capturedVideo', capturedVideoDataURL);
+                        console.log(capturedVideoDataURL,'capturedVideoDataURL')
+                        // formData.append('video', capturedVideoDataURL);
+                        fetch(capturedVideoDataURL)
+                        .then(response => response.blob())
+                        .then(blob => {
+
+                            formData.append('video', blob, 'captured_video.webm'); // 'video' is the field name
+
+                        $.ajax({
+                            url: '/capture_video',
+                            method: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function (response) {
+                                // Handle the success response
+                                console.log(response);
+
+                                // Clear the media title input
+                                $('.media-title-input').val('');
+
+                                $('.media-title-input').css('visibility', 'hidden');
+
+                                // Optionally, update the UI with the newly added media
+                                if (response.media) {
+                                    const newMediaContainer = $('#new-media-container');
+
+                                    // Loop through the new media items in the response
+                                    response.media.forEach(function (media) {
+                                        const mediaUrl = `/static/media/${media.media_data}`;
+
+                                        // Create a new element for the media
+                                        const mediaElement = document.createElement('div');
+                                        mediaElement.className = 'new-media-item';
+
+                                        // Check if the media type is image or video and create appropriate HTML
+                                        if (media.media_type.startsWith('image')) {
+                                            mediaElement.innerHTML = `
+                                                <img src="${mediaUrl}" alt="${media.mediatitle}" class="img-thumbnail">
+                                                <p class="media-title">${media.mediatitle}</p>
+                                                <p class="timestamp">${media.upload_datetime}</p>
+                                            `;
+                                        } else if (media.media_type.startsWith('video')) {
+                                            mediaElement.innerHTML = `
+                                                <video controls src="${mediaUrl}" class="video-thumbnail" ></video>
+                                                <p class="media-title">${media.mediatitle}</p>
+                                                <p class="timestamp">${media.upload_datetime}</p>
+                                            `;
+                                        }
+
+                                        // Append the new media element to the container
+                                        newMediaContainer.append(mediaElement);
+                                    });
+
+                                    updateMediaRecords();
+                                }
+
+                                location.reload();
+                                $('#submit').prop('disabled', true);
+                            },
+                            error: function (xhr, status, error) {
+                                // Handle the error response
+                                console.error(error);
+                            }
+                        });
+                    });
                     }
 
                     // Check if a file is selected in the "file-input" field and append it
                     const fileInput = $('#file-input')[0];
+
                     if (fileInput.files.length > 0) {
+                        console.log(fileInput.files[0])
                         formData.append('file', fileInput.files[0]);
+                        $.ajax({
+                            url: '/insertmedia',
+                            method: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function (response) {
+                                // Handle the success response
+                                console.log(response);
+
+                                // Clear the media title input
+                                $('.media-title-input').val('');
+
+                                $('.media-title-input').css('visibility', 'hidden');
+
+                                // Optionally, update the UI with the newly added media
+                                if (response.media) {
+                                    const newMediaContainer = $('#new-media-container');
+
+                                    // Loop through the new media items in the response
+                                    response.media.forEach(function (media) {
+                                        const mediaUrl = `/static/media/${media.media_data}`;
+
+                                        // Create a new element for the media
+                                        const mediaElement = document.createElement('div');
+                                        mediaElement.className = 'new-media-item';
+
+                                        // Check if the media type is image or video and create appropriate HTML
+                                        if (media.media_type.startsWith('image')) {
+                                            mediaElement.innerHTML = `
+                                                <img src="${mediaUrl}" alt="${media.mediatitle}" class="img-thumbnail">
+                                                <p class="media-title">${media.mediatitle}</p>
+                                                <p class="timestamp">${media.upload_datetime}</p>
+                                            `;
+                                        } else if (media.media_type.startsWith('video')) {
+                                            mediaElement.innerHTML = `
+                                                <video controls src="${mediaUrl}" class="video-thumbnail" ></video>
+                                                <p class="media-title">${media.mediatitle}</p>
+                                                <p class="timestamp">${media.upload_datetime}</p>
+                                            `;
+                                        }
+
+                                        // Append the new media element to the container
+                                        newMediaContainer.append(mediaElement);
+                                    });
+
+                                    updateMediaRecords();
+                                }
+
+                                location.reload();
+                                $('#submit').prop('disabled', true);
+                            },
+                            error: function (xhr, status, error) {
+                                // Handle the error response
+                                console.error(error);
+                            }
+                        });
                     }
 
+
                     // Perform your AJAX request using formData
-                    $.ajax({
-                        url: '/insertmedia',
-                        method: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function (response) {
-                            // Handle the success response
-                            console.log(response);
 
-                            // Clear the media title input
-                            $('.media-title-input').val('');
-
-                            $('.media-title-input').css('visibility', 'hidden');
-
-                            // Optionally, update the UI with the newly added media
-                            if (response.media) {
-                                const newMediaContainer = $('#new-media-container');
-
-                                // Loop through the new media items in the response
-                                response.media.forEach(function (media) {
-                                    const mediaUrl = `/static/media/${media.media_data}`;
-
-                                    // Create a new element for the media
-                                    const mediaElement = document.createElement('div');
-                                    mediaElement.className = 'new-media-item';
-
-                                    // Check if the media type is image or video and create appropriate HTML
-                                    if (media.media_type.startsWith('image')) {
-                                        mediaElement.innerHTML = `
-                                            <img src="${mediaUrl}" alt="${media.mediatitle}" class="img-thumbnail">
-                                            <p class="media-title">${media.mediatitle}</p>
-                                            <p class="timestamp">${media.upload_datetime}</p>
-                                        `;
-                                    } else if (media.media_type.startsWith('video')) {
-                                        mediaElement.innerHTML = `
-                                            <video controls src="${mediaUrl}" class="video-thumbnail" ></video>
-                                            <p class="media-title">${media.mediatitle}</p>
-                                            <p class="timestamp">${media.upload_datetime}</p>
-                                        `;
-                                    }
-
-                                    // Append the new media element to the container
-                                    newMediaContainer.append(mediaElement);
-                                });
-
-                                updateMediaRecords();
-                            }
-
-                            location.reload();
-                            $('#submit').prop('disabled', true);
-                        },
-                        error: function (xhr, status, error) {
-                            // Handle the error response
-                            console.error(error);
-                        }
-                    });
                 } else {
                     // Handle the case when mediaTitle is empty
                     alert('Please enter a media title.');

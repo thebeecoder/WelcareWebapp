@@ -11,8 +11,17 @@
     <link rel="stylesheet" type="text/css" href="../static/stylesheets/media.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
 </head>
+<style>
+    /* Add this CSS to style the email options in black */
+.black-text {
+    color: black;
+}
+
+</style>
 <body>
     <div class="container">
         <div class="sidebar"></div>
@@ -35,29 +44,74 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row" id="preview-container"></div>
+
                     <div class="modal fade" id="mediaModal" tabindex="-1" role="dialog" aria-labelledby="mediaModalLabel" aria-hidden="true">
                         <div class="modal-dialog modal-lg" role="document">
                             <div class="modal-content">
                                 <div class="modal-body">
                                     <img id="mediaLargeView" src="" alt="Media" class="img-fluid">
                                 </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                </div>
+                                <!-- Add this line inside the mediaElement.innerHTML for video media -->
+                                <!--<p class="card-text title">${media.mediatitle}</p> -->
                             </div>
                         </div>
                     </div>
-                    <form method="POST" class="text-center" enctype="multipart/form-data" action="{{ url_for('view_media') }}">
+                    <form method="POST" class="text-center" enctype="multipart/form-data" action="{{ url_for('insert_media_for_admin') }}">
+                        <br>
+                        <br>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input d-none" id="file-input" multiple accept="image/*, video/*" required>
-                            <label class="custom-file-label btn btn-light" for="" id="selectMediaBtn"><i class="fas fa-photo-video"></i> &nbsp; Select media files</label>
+                            <input type="file" class="custom-file-input d-none" id="file-input" name="file" multiple accept="image/*, video/*" required>
+                            <label class="custom-file-label btn btn-light" id="selectMediaBtn">
+                                <i class="fas fa-photo-video"></i> &nbsp; Select media files
+                            </label>
                         </div>
-                        <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-upload"></i> &nbsp; Save</button>
+                        <button type="submit" class="btn btn-primary mt-3" id="submit" disabled><i class="fas fa-upload"></i> &nbsp; Save</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+    <!-- Modal for Camera -->
+    <div class="modal fade" id="cameraModal" tabindex="-1" role="dialog" aria-labelledby="cameraModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cameraModalLabel">Camera</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center mb-3">
+                        <!-- Start Camera Button -->
+                        <button id="start-camera" class="btn btn-primary">Start Camera</button>
+                        <button id="save-media" class="btn btn-primary" disabled>Save</button>
+                    </div>
+                    <!-- Video Container -->
+                    <div class="d-flex justify-content-center">
+                        <div class="video-container" id="preview-record">
+                            <video  id="cameraPreview" width="100%" height="100%" autoplay></video>
+                        </div>
+                    </div>
+                    <!-- Photo and Video Canvases -->
+                    <div class="modal-dialog modal-lg">
+                        <canvas id="photoCanvas" width="100%" height="80%" style="display: none;"></canvas>
+                        <canvas id="videoCanvas" width="100%" height="80%" style="display: none;"></canvas>
+                    </div>
+                    <!-- Buttons -->
+                    <div class="d-flex justify-content-center mt-3">
+                        <button id="capture-photo" class="btn btn-primary">Capture Photo</button>
+                        <button id="start-record" class="btn btn-primary">Start Recording</button>
+                        <button id="stop-record" class="btn btn-danger" disabled>Stop Recording</button>
+                        <a id="download-video" download="captured-video.webm" class="btn btn-primary" aria-disabled="true">Download Video</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main Modal for Selecting Media Source -->
     <div class="modal fade" id="mediaSourceModal" tabindex="-1" role="dialog" aria-labelledby="mediaSourceModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -73,20 +127,38 @@
                     </div>
                     <div class="row">
                         <div class="col text-center">
-                            <button type="button" class="btn btn-primary" id="openCameraBtn">Open Camera</button>
+                            <button type="button" class="btn btn-primary" id="openCameraBtn" data-toggle="modal" data-target="#cameraModal">Open Camera</button>
                         </div>
                         <div class="col text-center">
                             <button type="button" class="btn btn-secondary" id="uploadFromDeviceBtn">Upload from Device</button>
                         </div>
                     </div>
                 </div>
-                <div class="text-center">
-                            <video id="cameraPreview" autoplay playsinline style="display: none;"></video>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmationModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this media item?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancelDeleteBtn">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Confirm</button>
                 </div>
             </div>
         </div>
     </div>
+
     <script>
         var userData = {
             first_name: "{{ user.first_name }}",
@@ -101,10 +173,11 @@
     <script src="../static/javascript/date-rangerpicker.js"></script>
 
     <script src="../static/javascript/setup.js"></script>
-    <script src="../static/javascript/user-sidebar.js"></script>
-    <script src="../static/javascript/media.js"></script>
+    <script src="../static/javascript/admin-sidebar.js"></script>
+    <script src="../static/javascript/manage-media.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+
 
 </body>
 </html>
