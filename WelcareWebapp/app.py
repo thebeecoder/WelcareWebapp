@@ -93,7 +93,7 @@ def fetch_user_info(cursor, user_id):
         return None
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('github/WelcareWebapp/templates/', methods=['GET', 'POST'])
 def role_select():
     return render_template('role_select.html')
 
