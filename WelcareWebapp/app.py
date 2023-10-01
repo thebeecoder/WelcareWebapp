@@ -103,7 +103,7 @@ def fetch_user_info(cursor, user_id):
         return None
 
 
-@app.route('/github/WelcareWebapp/templates', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def role_select():
     return render_template('role_select.html')
 
@@ -145,7 +145,7 @@ def signup():
     return render_template('signup.html', message=message)
 
 
-@app.route('/github/WelcareWebapp/templates/login/', methods=['GET', 'POST'])
+@app.route('/login/', methods=['GET', 'POST'])
 def login():
     message = None
     user = None
