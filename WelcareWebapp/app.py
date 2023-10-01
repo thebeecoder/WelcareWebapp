@@ -145,7 +145,7 @@ def signup():
     return render_template('signup.html', message=message)
 
 
-@app.route('/login/', methods=['GET', 'POST'])
+@app.route('/github/WelcareWebapp/templates/login/', methods=['GET', 'POST'])
 def login():
     message = None
     user = None
