@@ -40,10 +40,10 @@ def allowed_file(filename):
 # )
 
 db_config = {
-    "host": "localhost",
-    "user": "root",
-    "password": "",
-    "database": "u159785945_welcarewebapp",
+    "host": "welcare.org.uk",
+    "user": "welcare",
+    "password": "welcarewebapp",
+    "database": "welcarewebapp",
     "pool_name": "my_pool",
     "pool_size": 32,
     "pool_reset_session": False,
