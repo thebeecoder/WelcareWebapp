@@ -39,11 +39,21 @@ def allowed_file(filename):
 #     database='u159785945_welcarewebapp'
 # )
 
+#db_config = {
+ #   "host": "welcare.org.uk",
+  #  "user": "welcare",
+   # "password": "welcarewebapp",
+   # "database": "welcarewebapp",
+ #   "pool_name": "my_pool",
+  #  "pool_size": 32,
+   # "pool_reset_session": False,
+#}
+
 db_config = {
-    "host": "welcare.org.uk",
-    "user": "welcare",
-    "password": "welcarewebapp",
-    "database": "welcarewebapp",
+    "host": "srv743.hstgr.io",
+    "user": "u159785945_welcare",
+    "password": "Welcarewebapp12",
+    "database": "u159785945_welcarewebapp",
     "pool_name": "my_pool",
     "pool_size": 32,
     "pool_reset_session": False,
