@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Users</title>
+    <link rel="icon" type="image/x-icon" href="../static/favicon.ico">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
+    <link rel="stylesheet" type="text/css" href="../static/stylesheets/general.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar"></div>
+        <div class="right-body">
+            <div class="card">
+                <div class="card-body" >
+                    <div class="row">
+                        <div class="col">
+                            <h3 class="text-uppercase pt-2">Manage Notes</h3>
+                        </div>
+                        <div class="col-auto">
+                            <div id="reportrange" class="form-control">
+                                <i class="fa fa-calendar"></i>&nbsp;
+                                <span></span>&nbsp;&nbsp;<i class="fa fa-caret-down"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <input type="button" class="btn btn-light mt-1" value="Add new note" data-toggle="modal" data-target="#addNewNoteModal" id="addNewNote">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="car0d">
+                <div class="card-body">
+                    <table class="table table-striped record-table d-none">
+                        <thead>
+                            <tr>
+                                <th>S #</th>
+                                <th>Name</th>
+                                <th>Email address</th>
+                                <th>Title</th>
+                                <th>Note</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div id="manage-notes-body" class="text-center"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- The Modal -->
+    <div class="modal fade" id="addNewNoteModal" tabindex="-1" role="dialog" aria-labelledby="addNewNoteModal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="myModalLabel">Add New Note</h5>
+                    <button type="button" class="btn btn-danger closeModal" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="noteForm">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <div class="input-container">
+                                        <select class="form-control" id="userr_id" name="userr_id" required>
+                                            <option value="" >Select an email</option>
+                                        </select>
+                                        <label for="userr_id"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <div class="input-container">
+                                    <input type="datetime-local" class="form-control" id="note_date" name="note_date" required>
+                                    <input type="hidden" class="form-control" id="note_id" name="note_id">
+                                    <label for="note_date">Date</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <div class="input-container">
+                                        <input type="text" class="form-control" id="Title" name="Title" required>
+                                        <label for="Title">Title</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-container">
+                                    <input type="text" class="form-control" id="content" name="content" required>
+                                    <label for="content">Note</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- <button type="button" class="btn btn-secondary closeModal" data-dismiss="modal">Close</button> -->
+                        <button type="submit" id="submitButton" class="btn btn-light">Create profile</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script src="../static/javascript/date-rangerpicker.js"></script>
+
+    <script>
+        var userData = {
+            first_name: "{{ user.first_name }}",
+            last_name: "{{ user.last_name }}",
+            profile_picture: "{{ url_for('static', filename='images/' + user.profile_picture) }}"
+        };
+    </script>
+    <script src="../static/javascript/setup.js"></script>
+    <script src="../static/javascript/staff-sidebar.js"></script>
+    <script src="../static/javascript/staff-note.js"></script>
+</body>
+</html>
