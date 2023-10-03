@@ -2,6 +2,7 @@ import logging
 import os
 from colorama import Cursor
 import mysql.connector
+import pymysql
 import mysql.connector.pooling
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from werkzeug.security import generate_password_hash
@@ -43,9 +44,6 @@ db_config = {
     "user": "u159785945_welcare",
     "password": "Welcarewebapp12",
     "database": "u159785945_welcarewebapp",
-    "pool_name": "my_pool",
-    "pool_size": 32,
-    "pool_reset_session": False,
 }
 
 #db_config = {
@@ -57,8 +55,6 @@ db_config = {
   #  "pool_size": 32,
    # "pool_reset_session": False,
 #}
-connection_pool = mysql.connector.pooling.MySQLConnectionPool(**db_config)
-db_connection = connection_pool.get_connection()
 
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
@@ -66,7 +62,7 @@ Session(app)
 
 def get_db_connection():
     try:
-        db_connection = connection_pool.get_connection()
+        db_connection = pymysql.connect(**db_config)
         return db_connection
     except Exception as e:
         print("An error occurred while getting a database connection:", e)
