@@ -32,29 +32,12 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Establish the database connection
-# db_connection = mysql.connector.connect(
-#     host='srv743.hstgr.io',
-#     user='u159785945_welcare',
-#     password='Welcarewebapp12',
-#     database='u159785945_welcarewebapp'
-# )
 db_config = {
-    "host": "srv743.hstgr.io",
-    "user": "u159785945_welcare",
-    "password": "Welcarewebapp12",
-    "database": "u159785945_welcarewebapp",
+    "host": "",
+    "user": "",
+    "password": "",
+    "database": "",
 }
-
-#db_config = {
-#    "host": "welcare.org.uk",
- #   "user": "welcare",
-  #  "password": "welcarewebapp",
-# "database": "welcarewebapp",
- #   "pool_name": "my_pool",
-  #  "pool_size": 32,
-   # "pool_reset_session": False,
-#}
 
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
